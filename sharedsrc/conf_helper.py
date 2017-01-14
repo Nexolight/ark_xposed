@@ -6,13 +6,14 @@ import logging
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)-8s %(name)-11s %(message)s")
 
 class ConfHelper(object):
-    def __init__(self):
+    def __init__(self, update=True):
         self.l = logging.getLogger(self.__class__.__name__)
         self.xposed_cfg=[]
-        self.updateCfg()
         self.arkgus=[]
-        self.updateARKGus()
-    
+        if update==True:
+            self.updateCfg()
+            self.updateARKGus()
+
     def updateCfg(self):
         '''
         Cache the xposed.cfg
@@ -47,6 +48,10 @@ class ConfHelper(object):
             self.arkgus=[]
         
     def readCfg(self, setting):
+        '''
+        Read setting from cache
+        :param setting:
+        '''
         for l in self.xposed_cfg:
             matches = re.search("^\s*?"+setting+"\s*?=\s*?(.*)$",l)
             if matches:
@@ -54,6 +59,10 @@ class ConfHelper(object):
         return None
     
     def readGUSCfg(self, setting):
+        '''
+        Read setting from cache
+        :param setting:
+        '''
         for l in self.arkgus:
             matches = re.search("^\s*?"+setting+"\s*?=\s*?(.*)$",l)
             if matches:

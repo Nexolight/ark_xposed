@@ -4,13 +4,12 @@ import threading
 import multiprocessing
 import sys
 import json
-from json.decoder import JSONDecoder
-from json.encoder import JSONEncoder
+from sharedsrc.playerdb_helper import PlayerJSONEncoder, PlayerJSONDecoder, Player
+from sharedsrc.cmd_helper import CMD
 import re
 import os
 import logging
 import time
-import subprocess
 import chardet
 from sharedsrc.conf_helper import ConfHelper
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)-8s %(name)-11s %(message)s")
@@ -40,57 +39,6 @@ class Main(object):
             self.l.info("terminated...")
             worker.stop()
             sys.exit(0)
-            
-class CMD(object):
-    def __init__(self):
-        self.l = logging.getLogger(self.__class__.__name__)
-
-    def proc(self, args, env=None, proctimeout=5, cwd=None):
-        '''
-        This executes an external program and returns the output as well as the errors
-        decoded as utf-8 or plain (on fail). This method may time out. It returns None on any error.
-        Othersie an Array like [str(output), str(errors)] is returned.
-        :param args: The command line as array.
-        :param env: Additional environment variables.
-        :param proctimeout: The maximum execution time.
-        :param cwd: Change to directory
-        '''
-        output=""
-        errors=""
-        sysenv=os.environ.copy()
-        if env:
-            sysenv.update(env)
-        process=None
-        try:
-            process=subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=sysenv, cwd=cwd)#subprocess with pipes
-            stdoutdata, stderrdata=process.communicate(timeout=proctimeout)#Get the data and wait for finish
-            try:
-                output=stdoutdata.decode("utf-8")
-                errors=stderrdata.decode("utf-8")
-            except UnicodeDecodeError:#In some rare cases
-                self.local.l.warn("UnicodeDecodeError - cannot read output")
-                output=stdoutdata
-                errors=stderrdata
-        except subprocess.TimeoutExpired:#Self explaining
-            emsg="TimeoutExpired - Execution required more than "+str(proctimeout)+"s."
-            errors=emsg
-        except MemoryError:
-            emsg="MemoryError - It seems like you're out of ram - The output is to big."
-            errors=emsg
-        except Exception as e:
-            emsg=str(e)
-            errors=emsg
-        finally:
-            if process:
-                try:
-                    process.kill()
-                except OSError as e:
-                    pass
-                if process.stdout:
-                    process.stdout.close()
-                if process.stderr:
-                    process.stderr.close()
-        return[output, errors]
 
 
 class Worker(threading.Thread):
@@ -216,52 +164,6 @@ class Worker(threading.Thread):
         True when the thread is terminated
         '''
         return self._stopit.isSet()
-
-class PlayerJSONEncoder(JSONEncoder):
-    def default(self, object):
-        if isinstance(object, Player):
-            obj = {
-                "no":object.no,
-                "name":str(object.name),
-                "steamid":object.steamid,
-                "lastseen":object.lastseen,
-                "timeplayed":object.timeplayed,
-                "firstseen":object.firstseen
-            }
-            return obj
-        else:
-            #Use the defaults for everything else
-            return JSONEncoder.default(self, object)
-
-class PlayerJSONDecoder(JSONDecoder):
-    def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(self, object_hook=self.decodePlayer, *args, **kwargs)
-    def decodePlayer(self, object):
-        res = Player(
-            no=object.get("no"),
-            name=object.get("name"),
-            steamid=object.get("steamid"),
-            lastseen=object.get("lastseen"),
-            timeplayed=object.get("timeplayed"),
-            firstseen=object.get("firstseen"),
-        )
-        return res       
-        
-class Player(object):
-    def __init__(self,
-        no=0,
-        name="unknown",
-        steamid=0,
-        lastseen=0,
-        timeplayed=0,
-        firstseen=0
-    ):
-        self.no=no
-        self.name=name
-        self.steamid=steamid
-        self.lastseen=lastseen
-        self.timeplayed=timeplayed
-        self.firstseen=firstseen    
 
 if __name__ == '__main__':
     Main()
