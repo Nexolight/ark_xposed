@@ -1,0 +1,4 @@
+ark_update.sh
+ark_start.sh
+*.log
+*.json
