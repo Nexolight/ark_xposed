@@ -3,7 +3,6 @@
 import threading
 import multiprocessing
 import sys
-import argparse
 import json
 from json.decoder import JSONDecoder
 from json.encoder import JSONEncoder
@@ -13,6 +12,7 @@ import logging
 import time
 import subprocess
 import chardet
+from sharedsrc.conf_helper import ConfHelper
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)-8s %(name)-11s %(message)s")
 
 class Main(object):
@@ -20,72 +20,17 @@ class Main(object):
     Just the main class
     '''
     spath = os.path.dirname(sys.argv[0])
-    settings={
-        "intervall":60000,
-        "gus":None,
-        "playerdb":os.path.join(spath,"arkstats/playerdb.json"),
-        "playerrecords":os.path.join(spath,"arkstats/playerrecords.info"),
-        "serverrecords":os.path.join(spath,"arkstats/serverrecords.info")
-    }
-
+    cfgh = ConfHelper()
     def __init__(self):
         self.l = logging.getLogger(self.__class__.__name__)
         self.l.info("Initialized ARK statistics tool")
-        self.settings = Main.settings
-        parser = argparse.ArgumentParser(description="Settings for ARK statistics")
-        parser.add_argument(
-            "-s", "--settings-file", metavar="path", nargs=1,
-            help="The path to the GameUserSettings",
-            dest="gus"
-        )
-        
-        parser.add_argument(
-            "-i", "--intervall", metavar="seconds", nargs="?",
-            default=0,
-            type=int,
-            help="The internal db.",
-            dest="intv"
-        )
-        parser.add_argument(
-            "-d", "--player-db", metavar="path", nargs="?",
-            default=None,
-            help="The internal db.",
-            dest="plrec"
-        )
-        parser.add_argument(
-            "-p", "--player-records", metavar="path", nargs="?",
-            default=None,
-            help="The path to the records for players",
-            dest="plrec"
-        )
-        parser.add_argument(
-            "-a", "--arkserver-records", metavar="path", nargs="?",
-            default=None,
-            help="The path to the records for the ark server",
-            dest="srvrec"
-        )
 
-        args = parser.parse_args()
-
-        if args.gus and os.path.exists(args.gus[0]):
-            self.settings["gus"]=args.gus[0]
-        else:
-            self.l.error("Please enter a valid path to GameUserSettings!")
-            parser.print_help()
-            sys.exit(1)
-        if args.intv and args.intv > 0:
-            self.settings["intervall"]=args.intv
-        if args.plrec:
-            self.settings["playerrecords"]=args.plrec
-        if args.srvrec:
-            self.settings["serverrecords"]=args.srvrec
-
-        worker = Worker(self.settings, GUSHelper(self.settings))
+        worker = Worker(self.spath, self.cfgh)
         worker.start()
         try:
             while True:
                 worker.fetchPlayerInfo()
-                time.sleep(self.settings.get("intervall"))
+                time.sleep(int(self.cfgh.readCfg("STATS_INTERVALL")))
         except KeyboardInterrupt:
             pass
         except Exception as e:
@@ -95,27 +40,7 @@ class Main(object):
             self.l.info("terminated...")
             worker.stop()
             sys.exit(0)
-
-class GUSHelper(object):
-    def __init__(self,settings):
-        self.settings = settings
-
-    def readKeyGUS(self,key):
-        gus = open(self.settings.get("gus"),"rb")
-        enc = chardet.detect(gus.read()).get("encoding")
-        if enc == "windows-1252":
-            enc = "cp1252"
-        gus.close()
-        gus = open(self.settings.get("gus"), encoding=enc)
-        for line in gus.readlines():
-            matches = re.search("^\s*?"+key+"\s*?=\s*?([^\s]+).*$",line)
-            if matches:
-                gus.close()
-                return matches.group(1)
-        gus.close()
-        return None
-
-
+            
 class CMD(object):
     def __init__(self):
         self.l = logging.getLogger(self.__class__.__name__)
@@ -173,11 +98,11 @@ class Worker(threading.Thread):
     Do the work in threads
     '''
 
-    def __init__(self, settings, gush):
+    def __init__(self, spath, cfgh):
         '''
         Initializes the worker
-        :param settings: from Main.settings
-        :param gush: GUSHelper instance
+        :param spath: path of this script
+        :param cfgh: ConfHelper instance
         '''
         super(Worker, self).__init__()
         self.l = logging.getLogger(self.__class__.__name__)
@@ -185,13 +110,10 @@ class Worker(threading.Thread):
         self.activeTasks = []
         self.queue = []
         self.l.info("Initialized ARK statistics worker")
-        self.settings=settings
-        self.l.info("Settings loaded:")
-        for key,value in settings.items():
-            self.l.info(str(key)+" --> "+str(value))
+        self.spath=spath
         self.cmd = CMD()
         self.l.info("Started command line helper")
-        self.gush = gush
+        self.cfgh = cfgh
         self.lock = threading.Lock()
 
     def run(self):
@@ -223,10 +145,10 @@ class Worker(threading.Thread):
     def __fetchPlayerInfo(self):
         output = self.cmd.proc(
             args=[
-                "mcrcon", "-c",
+                os.path.join(self.spath, "thirdparty/mcrcon"), "-c",
                 "-H", "127.0.0.1",
-                "-P", "32330",
-                "-p", self.gush.readKeyGUS("ServerAdminPassword"),
+                "-P", self.cfgh.readGUSCfg("RCONPort"),
+                "-p", self.cfgh.readGUSCfg("ServerAdminPassword"),
                 "listplayers"
             ]
         )
@@ -245,11 +167,11 @@ class Worker(threading.Thread):
                         lastseen=int(time.time()),
                         firstseen=int(time.time())
                     )
-                    self.folderhealth(self.settings.get("playerdb"))
+                    self.folderhealth(os.path.join(self.spath,self.cfgh.readCfg("STATS_PLAYERDB")))
                     players=[]
                     self.lock.acquire()
-                    if os.path.exists(self.settings.get("playerdb")):
-                        file = open(self.settings.get("playerdb"), "r")
+                    if os.path.exists(os.path.join(self.spath,self.cfgh.readCfg("STATS_PLAYERDB"))):
+                        file = open(os.path.join(self.spath,self.cfgh.readCfg("STATS_PLAYERDB")), "r")
                         players=json.load(file, cls=PlayerJSONDecoder)
                         file.close()
                     exists=False
@@ -260,7 +182,7 @@ class Worker(threading.Thread):
                             plr.no=player.no
                             plr.name=player.name
                             td = player.lastseen - plr.lastseen
-                            if td < self.settings.get("intervall") + 5000:
+                            if td < int(self.cfgh.readCfg("STATS_INTERVALL")) + 5000:
                                 plr.timeplayed += td
                             plr.lastseen = player.lastseen
                             self.l.info("updated player "+str(plr.name))
@@ -269,7 +191,7 @@ class Worker(threading.Thread):
                     if not exists:
                         players.append(player)
                         self.l.info("added new player \""+str(player.name)+"\" to db.")
-                    file = open(self.settings.get("playerdb"), "w+")
+                    file = open(os.path.join(self.spath,self.cfgh.readCfg("STATS_PLAYERDB")), "w+")
                     json.dump(players,file,cls=PlayerJSONEncoder)
                     file.close()
                     self.lock.release()

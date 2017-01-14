@@ -1,68 +1,22 @@
 #!/bin/bash
-#
-# -----------------------------------------------------------------------------
-#
-# MIT License (MIT)
-# Copyright (c) 2015-2016 Nexolight (Lucy von Känel - snow.dream.ch@gmail.com)
-#
-# Permission is hereby granted, free of charge, to any person obtaining a
-# copy of this software and associated documentation files (the "Software"),
-# to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense,
-# and/or sell copies of the Software, and to permit persons to whom the
-# Software is furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included
-# in all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-# OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# DEALINGS IN THE SOFTWARE.
-#
-# -----------------------------------------------------------------------------
-#
-# This Script updates your ark server plus it downloads and installs the mods
-# you've specified in the GameUserConfig.ini. Updates are done at runtime!
-# The whole script is rough and was originally created for my personal use.
-# So don't expect that much from it. I just made sure that it does it's job
-# for me.
-#
-# -----------------------------------------------------------------------------
-#
-# Dependencies:
-#
-# You need your own ark startup script
-#
-# crontab is recommended
-#
-# mcrcon
-# steamcmd
-# bash
-# grep
-# xargs
-# sed
-# cat
-# echo
-# dos2unix
-# perl
-#
-# You need to change the variables below
-
+SCRIPT=$(realpath $0)
+SCRIPTPATH=$(dirname $SCRIPT)
+function getFromCfg(){
+	cat $SCRIPTPATH/xposed.cfg | grep -Po "(?<=^$1\=)(.*)$" | tr -d '\n'
+}
+function getFromArkCfg(){
+	FILE="$(getFromCfg ARKDIR)/ShooterGame/Saved/Config/LinuxServer/GameUserSettings.ini"
+	dos2unix $FILE &> /dev/null && cat $FILE | grep -Po "(?<=^$1\=)(.*)$" | tr -d '\n'
+}
 #Required folders
 #The folder where steamcmd.sh is located
-STEAMDIR=/home/steam/steamcmd
+STEAMDIR="$(getFromCfg STEAMDIR)"
 #The folder where steamcmd downloads the mods and lists them named by their mod id
-STEAMMODDIR=$STEAMDIR/steamapps/workshop/content/346110
-#This dir is used for logs, tools and ark startup script
-SCRIPTDIR=$STEAMDIR/scripts
+STEAMMODDIR="$STEAMDIR/steamapps/workshop/content/346110"
 #You're not forced to place your server startup script there. Just give enter the full path of the script
-STARTUPSCRIPT=$SCRIPTDIR/ark_start.sh
+STARTUPSCRIPT="$SCRIPTPATH/$(getFromCfg STARTUP_SCRIPT)"
 #The ARK root directory
-GAMEDIR=$STEAMDIR/steamapps/common/ARK
+GAMEDIR="$(getFromCfg ARKDIR)"
 #The full path to the GameUserSettings.ini
 BASECONFIG=$GAMEDIR/ShooterGame/Saved/Config/LinuxServer/GameUserSettings.ini
 MMHINT="\n\nIf you get a version missmatch after the restart then delete your local (outdated) mod version to force steam to redownload it. See ark420-the.center --> faq (right side)\nhttp://ark420-the.center/index.php/faq/"
@@ -73,11 +27,9 @@ STEAMUSER="anonymous"
 STEAMPW=""
 
 #MCRCON - Download at https://sourceforge.net/projects/mcrcon/
-MCRCON=/opt/mcrcon/mcrcon
+MCRCON="$SCRIPTPATH/thirdparty/mcrcon"
 #The port where ark rcon service is listening
-MCRCONPORT=32330
-#This is your ark server admin password which is used for the rcon messages
-MCRCONPW="changeme"
+MCRCONPORT="$(getFromArkCfg RCONPort)"
 
 ###############################################################################
 
@@ -291,9 +243,9 @@ echo "ARK mods update check performed at: $(date)"
 echo "-------------------------------------------------------"
 echo ""
 if (("$dorestart" > 0)); then
-        MCRCONPW=$(grep -Po '(?<=^ServerAdminPassword\=)(.*)$' $BASECONFIG)
+        MCRCONPW="$(getFromArkCfg ServerAdminPassword)"
         echo "ARK was updated successfully"
-        echo "ARK update performed at: $(date)\n" >> $SCRIPTDIR/gameupdate.log
+        echo "ARK update performed at: $(date)\n"
         echo "Warning users about server restart"
         $MCRCON -c -H 127.0.0.1 -P $MCRCONPORT -p $MCRCONPW cmd1 "broadcast New updates are installed now\nThe server is going to restart in 15min.\nThe world will be saved before restart\n"
         sleep 300

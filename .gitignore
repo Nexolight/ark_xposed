@@ -1,2 +1,6 @@
+*.pydevproject
+*.settings
+*.pydev
+*.project
 *.log
 *.json
