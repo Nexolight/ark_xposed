@@ -39,12 +39,3 @@ def requires_role(roles):
             return f(*args, **kwargs)
         return wrapped
     return wrapper
-
-def requires_param(params):
-    def wrapper(f):
-        def wrapped(*args, **kwargs):
-            if not has_params(request, params):
-                return Response("A required param was not found("+str(params)+")",204)
-            return f(*args, **kwargs)
-        return wrapped
-    return wrapper

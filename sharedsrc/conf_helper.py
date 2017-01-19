@@ -53,21 +53,51 @@ class ConfHelper(object):
         :param setting:
         '''
         for l in self.xposed_cfg:
-            matches = re.search("^\s*?"+setting+"\s*?=\s*?(.*)$",l)
+            matches = re.search("^\s*"+setting+"\s*\=\s*(.+)$",l)
             if matches:
                 return matches.group(1)
         return None
     
-    def readGUSCfg(self, setting):
+    def readGUSCfg(self, setting, filterPW=False):
         '''
         Read setting from cache
         :param setting:
         '''
+        if filterPW and "password" in setting.lower():
+            return None
         for l in self.arkgus:
-            matches = re.search("^\s*?"+setting+"\s*?=\s*?(.*)$",l)
+            matches = re.search("^\s*"+setting+"\s*\=\s*(.+)$",l)
             if matches:
                 return matches.group(1)
         return None
     
+    def readGUSCfgDict(self,filterPW=True):
+        '''
+        Reads the whole cfg and returns a dict
+        :param filterPW: default true
+        '''
+        dict={}
+        for l in self.arkgus:
+            matches = re.search("^\s*([a-zA-Z0-9]+)\s*\=\s*(.+)$",l.strip())
+            if matches and len(matches.groups()) == 2:
+                if filterPW :
+                    if not "password" in matches.group(1).lower():
+                        dict.update({matches.group(1):matches.group(2)})
+                else:
+                    dict.update({matches.group(1):matches.group(2)})
+        return dict
     
-    
+    def readGUSCfgPlain(self,filterPW=True):
+        '''
+        Reads the whole cfg as is
+        :param filterPW: default true
+        '''
+        out=""
+        for l in self.arkgus:
+            add=l
+            if filterPW:
+                matches = re.search("^\s*([a-zA-Z0-9]+)\s*\=\s*(.+)$",l.strip())
+                if matches and len(matches.groups()) > 1 and "password" in matches.group(1).lower():
+                    add=""
+            out+=add
+        return out

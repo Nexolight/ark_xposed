@@ -16,7 +16,6 @@ class CMD(object):
         :param proctimeout: The maximum execution time.
         :param cwd: Change to directory
         '''
-        print("PROC")
         output=""
         errors=""
         sysenv=os.environ.copy()
@@ -52,6 +51,4 @@ class CMD(object):
                     process.stdout.close()
                 if process.stderr:
                     process.stderr.close()
-        print("PROC DONE")
-        print(str([output, errors]))
         return[output, errors]
