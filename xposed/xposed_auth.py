@@ -2,7 +2,7 @@ from flask import request, Response
 
 def check_auth(request):
     auth = request.authorization
-    if auth and auth.username == "test" and auth.password == "test2":
+    if(auth and auth.username == "admin" and auth.password == "Kaesefondue"):
         return True
     else:
         return False

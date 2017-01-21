@@ -1,14 +1,11 @@
-import logging
 from flask import Flask
 from xposed.xposed_stats import xposed_stats_bp
 from xposed.xposed_conf import xposed_conf_bp
-from xposed import cfgh
+from xposed import cfgh,l
 xposed = Flask(__name__)
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)-8s %(name)-11s %(message)s")
 
 class XPosed(object):
     def __init__(self):
-        self.l = logging.getLogger(self.__class__.__name__)
         #xposed.register_blueprint(xposed_profiles)
         xposed.register_blueprint(xposed_stats_bp)
         xposed.register_blueprint(xposed_conf_bp)
@@ -16,6 +13,9 @@ class XPosed(object):
 
 @xposed.route("/", methods=['GET', 'POST'])
 def hello_world():
+    '''
+    Yea sry I don't have time left that's fine for my purpose
+    '''
     apihelp="""
 <html>
     <head>
@@ -66,7 +66,7 @@ def hello_world():
             <div class="content">
                 <span>
                     <p>Returns overall play times on this server</p>
-                    <p>scope ( all | &lt steamid &gt )</p>
+                    <p>scope ( all | steamid &lt id &gt | steamname &lt name &gt)</p>
                 </span>
             </div>
         </div>
