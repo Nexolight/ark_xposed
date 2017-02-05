@@ -6,3 +6,6 @@
 *.project
 *.log
 *.json
+*.txt
+xposed_data
+flask_session

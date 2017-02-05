@@ -49,5 +49,5 @@ The API binds to port 6001 per default.
 * dos2unix
 * perl
 * python3
-* python3 chardet
-* python3 eve
+* python3 chardet (pip3)
+* Python3 flask, flask-openid (pip3)

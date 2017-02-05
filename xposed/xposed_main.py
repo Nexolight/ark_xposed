@@ -1,14 +1,31 @@
-from flask import Flask
+from xposed import cfgh,l
+from flask import Flask, Response
+from xposed.xposed_utils import Utils
+from flask_session import Session
+from flask_openid import OpenID
+xposed = Flask(__name__)
+xposed.config.update({
+    "OPENID_FS_STORE_PATH":cfgh.readCfg("XPOSED_DATA"),
+    "SESSION_TYPE":"filesystem",
+    "SECRET_KEY":Utils.getSecret(),
+})
+oid = OpenID(xposed,safe_roots=["/postlogin","/login","/chat","/serverconf","/serverstats"])
+#xposed.secret_key = 'super secret key'
+#xposed.config['SESSION_TYPE'] = 'filesystem'
+Session(xposed)
 from xposed.xposed_stats import xposed_stats_bp
 from xposed.xposed_conf import xposed_conf_bp
-from xposed import cfgh,l
-xposed = Flask(__name__)
+from xposed.xposed_profile import xposed_profile_bp
+from xposed.xposed_chat import xposed_chat_bp
+
 
 class XPosed(object):
     def __init__(self):
         #xposed.register_blueprint(xposed_profiles)
         xposed.register_blueprint(xposed_stats_bp)
         xposed.register_blueprint(xposed_conf_bp)
+        xposed.register_blueprint(xposed_profile_bp)
+        xposed.register_blueprint(xposed_chat_bp)
         xposed.run(port=int(cfgh.readCfg("XPOSED_PORT")), host=cfgh.readCfg("XPOSED_BIND"))
 
 @xposed.route("/", methods=['GET', 'POST'])
@@ -66,7 +83,11 @@ def hello_world():
             <div class="content">
                 <span>
                     <p>Returns overall play times on this server</p>
-                    <p>scope ( all | steamid &lt id &gt | steamname &lt name &gt)</p>
+                    <br>
+                    <p>scope=(all|steamid|steamname)</p>
+                    <br>
+                    <p>steamid id=str</p>
+                    <p>steamname name=str</p>
                 </span>
             </div>
         </div>
@@ -77,7 +98,23 @@ def hello_world():
             <div class="content">
                 <span>
                     <p>Returns GameUserConfig.ini settings</p>
-                    <p>entry ( allhtml | alljson | &lt setting &gt )</p>
+                    <br>
+                    <p>entry=(allhtml|alljson|"GUSSetting")</p>
+                </span>
+            </div>
+        </div>
+        <div class="entry">
+            <span class="head" onclick="spoiler(this)">
+                /chat
+            </span>
+            <div class="content">
+                <span>
+                    <p>Use the ingame chat</p>
+                    <br>
+                    <p>command=(read|send)</p>
+                    <br>
+                    <p>read [format=(html|json)] [lines=num] <i>limited</i></p>
+                    <p>send username=str message=str</p>
                 </span>
             </div>
         </div>

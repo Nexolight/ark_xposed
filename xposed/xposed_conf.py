@@ -3,13 +3,13 @@ import sys
 import json
 from flask import Blueprint, request, Response
 from xposed import cfgh
-from xposed.xposed_auth import requires_auth,requires_role
+from xposed.xposed_auth import requires_openid,requires_role
 from sharedsrc.playerdb_helper import PlayerJSONEncoder, PlayerJSONDecoder, Player
 
 xposed_conf_bp = Blueprint("xposed_conf", __name__)
 
 @xposed_conf_bp.route("/serverconf", methods=['GET', 'POST'])
-@requires_auth()
+@requires_openid()
 @requires_role(["admin"])
 def getConf():
     entry=request.args.get("entry")

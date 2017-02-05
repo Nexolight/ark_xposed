@@ -3,16 +3,22 @@ import os
 import sys
 import re
 import logging
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)-8s %(name)-11s %(message)s")
+from sharedsrc.file_watch import FileWatch
+logging.basicConfig(level=logging.DEBUG, format="%(levelname)-8s %(name)-20s %(message)s")
 
 class ConfHelper(object):
-    def __init__(self, update=True):
+    def __init__(self, update=True, autoupdate=True):
         self.l = logging.getLogger(self.__class__.__name__)
         self.xposed_cfg=[]
         self.arkgus=[]
+        self.fw = None
+        if autoupdate==True:
+            self.fw = FileWatch()
+            self.fw.startWatching()
         if update==True:
             self.updateCfg()
             self.updateARKGus()
+
 
     def updateCfg(self):
         '''
@@ -20,6 +26,8 @@ class ConfHelper(object):
         '''
         self.l.info("Caching xposed.cfg")
         configpath = os.path.join(os.path.dirname(sys.argv[0]),"xposed.cfg")
+        if self.fw:
+            self.fw.registerObserver(filepath=configpath, interval=1, callback=self.updateCfg, unique=True)
         try:
             with open(configpath, "r") as f:
                 self.xposed_cfg=f.readlines()
@@ -35,6 +43,8 @@ class ConfHelper(object):
         self.l.info("Caching GameUserSettings.ini")
         arkdir=self.readCfg("ARKDIR");
         guspath=os.path.join(arkdir, "ShooterGame/Saved/Config/LinuxServer/GameUserSettings.ini")
+        if self.fw:
+            self.fw.registerObserver(filepath=guspath, interval=1, callback=self.updateARKGus, unique=True)
         try:
             enc=""
             with open(guspath, "rb") as gus:
