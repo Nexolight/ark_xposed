@@ -17,13 +17,14 @@ class FileWatch(object):
         self.observers = {}
         self.worker = None
     
-    def registerObserver(self, filepath, interval, callback, unique=True):
+    def registerObserver(self, filepath, interval, callback, unique=True, gone=None):
         '''
         Do a callback when the given file changes.
         :param filepath:
         :param interval:
         :param callback:
         :param unique: default=True, Only adds the observer when the file is not watched yet.
+        :param gone: default=None, Call this function when the file is no longer available once to give it a chance for re-register.
         '''
         if unique and self.observers.get(filepath):
             return
@@ -31,6 +32,7 @@ class FileWatch(object):
         self.observers.update({
                 filepath:{
                     "observer":callback,
+                    "ondestroy":gone,
                     "interval":interval,
                     "modified":os.path.getmtime(filepath),
                     "lastcheck":time.time()
@@ -98,7 +100,7 @@ class FWWorker(threading.Thread):
     def checkFile(self, filepath):
         '''
         Check the modification time of the file
-        and call the corresponding callback when it was modified.
+        and call the corresponding callback when it was modified..
         :param filepath:
         '''
         fPI = threading.Thread(target=self.__checkFile, args=(filepath,))
@@ -109,6 +111,15 @@ class FWWorker(threading.Thread):
         see checkFile
         :param filepath:
         '''
+        if not os.path.exists(filepath):
+            self.l.info("File "+filepath+" doesn't exist anymore - removing observers")
+            self.lock.acquire(True)
+            detached=self.observers.pop(filepath)
+            self.lock.release()
+            if detached.get("ondestroy"):
+                self.l.info("calling gone callback")
+                detached.get("ondestroy")()
+            return
         mt = os.path.getmtime(filepath)
         if self.observers.get(filepath).get("modified") != mt:
             self.l.info("File "+filepath+" changed - calling observer")

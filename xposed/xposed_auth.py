@@ -3,7 +3,7 @@ import re
 import json
 import sys
 import copy
-from xposed import cfgh,l
+from xposed import cfgh,l,pdbh
 from xposed.xposed_main import oid, xposed
 
 def check_auth(request):
@@ -19,7 +19,7 @@ def before_request():
     g.reqPage=None
     if session.get("openid"):
         openid = session["openid"]
-        g.steamid=openid.get("identity")
+        g.steamid=openid.get("identity").split("/")[-1]
 
 @xposed.route('/login')
 @oid.loginhandler
@@ -59,10 +59,22 @@ def after_login(resp):
     return redirect("/login?status=failed")
 
 def has_roles(request, roles=[]):
-    #
-    # nothing done yet
-    #
-    return True
+    if(len(roles)==0):
+        return True
+    accept=True
+    if "player" in roles:
+        if not pdbh.getPlayerByID(g.steamid):
+            l.info("Player permission denied for this request!")
+            accept=False
+        else:
+            l.info("Player permission granted for this request!")
+    if "admin" in roles:
+        if not cfgh.readCfg("XPOSED_ADMINS") or not g.steamid in cfgh.readCfg("XPOSED_ADMINS"):
+            l.info("Admin permission denied for this request!")
+            accept=False
+        else:
+            l.info("Admin permission granted for this request!")
+    return accept
 
 def has_params(request, params=[]):
     for p in params:

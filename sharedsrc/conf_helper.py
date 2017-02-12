@@ -7,7 +7,16 @@ from sharedsrc.file_watch import FileWatch
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)-8s %(name)-20s %(message)s")
 
 class ConfHelper(object):
+    '''
+    A little helper which allos reading the 
+    config files. The config files may be cached for
+    faster access.
+    '''
     def __init__(self, update=True, autoupdate=True):
+        '''
+        :param update: Initialy read all configs. Set this to false when you don't need all of them.
+        :param autoupdate: Update cache on changes. This is triggered after initially updating the files.
+        '''
         self.l = logging.getLogger(self.__class__.__name__)
         self.xposed_cfg=[]
         self.arkgus=[]
@@ -27,7 +36,7 @@ class ConfHelper(object):
         self.l.info("Caching xposed.cfg")
         configpath = os.path.join(os.path.dirname(sys.argv[0]),"xposed.cfg")
         if self.fw:
-            self.fw.registerObserver(filepath=configpath, interval=1, callback=self.updateCfg, unique=True)
+            self.fw.registerObserver(filepath=configpath, interval=1, callback=self.updateCfg, unique=True, gone=None)
         try:
             with open(configpath, "r") as f:
                 self.xposed_cfg=f.readlines()
@@ -44,7 +53,7 @@ class ConfHelper(object):
         arkdir=self.readCfg("ARKDIR");
         guspath=os.path.join(arkdir, "ShooterGame/Saved/Config/LinuxServer/GameUserSettings.ini")
         if self.fw:
-            self.fw.registerObserver(filepath=guspath, interval=1, callback=self.updateARKGus, unique=True)
+            self.fw.registerObserver(filepath=guspath, interval=1, callback=self.updateARKGus, unique=True, gone=None)
         try:
             enc=""
             with open(guspath, "rb") as gus:

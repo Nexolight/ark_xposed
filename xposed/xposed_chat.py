@@ -10,7 +10,7 @@ xposed_chat_bp = Blueprint("xposed_chat", __name__)
 
 @xposed_chat_bp.route("/chat", methods=['GET', 'POST'])
 @requires_openid()
-@requires_role(["admin"])
+@requires_role(["player"])
 def chat():
     command=request.args.get("command")
     if(not command):

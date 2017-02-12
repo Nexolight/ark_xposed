@@ -17,7 +17,8 @@ MPLAYERS=160
 ?RCONPort=$RCONPORT\
 ?ServerAdminPassword=$ADMINPW\
 ?MaxPlayers=$MPLAYERS\
-?Message=$MESSAGE" \
+?Message=$MESSAGE\
+?AllowAnyoneBabyImprintCuddle=true" \
 -server \
 -USEALLAVAILABLECORES \
 -UseBattlEye \

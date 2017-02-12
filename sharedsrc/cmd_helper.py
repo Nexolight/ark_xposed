@@ -6,7 +6,7 @@ class CMD(object):
     def __init__(self):
         self.l = logging.getLogger(self.__class__.__name__)
 
-    def proc(self, args, env=None, proctimeout=5, cwd=None):
+    def proc(self, args, env=None, proctimeout=5, cwd=None, encoding=None):
         '''
         This executes an external program and returns the output as well as the errors
         decoded as utf-8 or plain (on fail). This method may time out. It returns None on any error.
@@ -15,9 +15,12 @@ class CMD(object):
         :param env: Additional environment variables.
         :param proctimeout: The maximum execution time.
         :param cwd: Change to directory
+        :param encoding: Switch the used encofing (default utf-8)
         '''
         output=""
         errors=""
+        if not encoding:
+            encoding="utf-8"
         sysenv=os.environ.copy()
         if env:
             sysenv.update(env)
@@ -26,8 +29,8 @@ class CMD(object):
             process=subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=sysenv, cwd=cwd)#subprocess with pipes
             stdoutdata, stderrdata=process.communicate(timeout=proctimeout)#Get the data and wait for finish
             try:
-                output=stdoutdata.decode("utf-8")
-                errors=stderrdata.decode("utf-8")
+                output=stdoutdata.decode(encoding)
+                errors=stderrdata.decode(encoding)
             except UnicodeDecodeError:#In some rare cases
                 self.local.l.warn("UnicodeDecodeError - cannot read output")
                 output=stdoutdata

@@ -10,7 +10,7 @@ xposed_conf_bp = Blueprint("xposed_conf", __name__)
 
 @xposed_conf_bp.route("/serverconf", methods=['GET', 'POST'])
 @requires_openid()
-@requires_role(["admin"])
+@requires_role([])
 def getConf():
     entry=request.args.get("entry")
     if(entry=="allhtml"):
