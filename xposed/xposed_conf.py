@@ -9,19 +9,19 @@ from sharedsrc.playerdb_helper import PlayerJSONEncoder, PlayerJSONDecoder, Play
 xposed_conf_bp = Blueprint("xposed_conf", __name__)
 
 @xposed_conf_bp.route("/serverconf", methods=['GET', 'POST'])
-@requires_openid()
-@requires_role([])
 def getConf():
     entry=request.args.get("entry")
     if(entry=="allhtml"):
-        return cfgh.readGUSCfgPlain(filterPW=True).replace("\n","<br>")
+        ret = cfgh.readGUSCfgPlain(filterPW=True).replace("\n","<br>")
+        return Response(response=ret,status=200,mimetype="text/html")
     elif(entry=="alljson"):
-        return json.dumps(cfgh.readGUSCfgDict(filterPW=True))
+        ret = json.dumps(cfgh.readGUSCfgDict(filterPW=True))
+        return Response(response=ret,status=200,mimetype="application/json")
     elif(entry):
         ret = cfgh.readGUSCfg(entry,filterPW=True)
         if not ret:
             return Response("404 - setting: "+entry+" not found", 404)
-        return ret
+        return Response(response=ret,status=200,mimetype="text/html")
     else:
         return Response("400 - Unsupported param",400)
         

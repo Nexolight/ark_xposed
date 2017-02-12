@@ -3,7 +3,9 @@ from flask import Flask, Response
 from xposed.xposed_utils import Utils
 from flask_session import Session
 from flask_openid import OpenID
+from flask_cors import CORS, cross_origin
 xposed = Flask(__name__)
+cors = CORS(xposed,resources={r"/*": {"origins": cfgh.readCfg("XPOSED_CORS_ORIGINS")}})
 xposed.config.update({
     "OPENID_FS_STORE_PATH":cfgh.readCfg("XPOSED_DATA"),
     "SESSION_TYPE":"filesystem",

@@ -40,12 +40,13 @@ class PlayerDBHelper(object):
         if self.fw:
             self.fw.registerObserver(filepath=self.dbpath, interval=1, callback=self.updatePlayerDB, unique=True, gone=self._recoverDBObserver)
         try:
+            tmpplayerdb=[]
             with open(self.dbpath, "r") as f:
                 for player in json.loads(f.read(),cls=PlayerJSONDecoder):
-                    self.playerdb.append(player)
+                    tmpplayerdb.append(player)
+            self.playerdb=tmpplayerdb
         except Exception as e:
-            e.print_stack_trace()
-            self.playerdb=[]
+            self.l.e("Cannot update playerdb cache: "+str(e))
             
     def _recoverDBObserver(self):
         if self.fw:

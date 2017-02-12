@@ -48,7 +48,7 @@ def chat():
                         "text":flifo.group(4)
                     })
             if format == "json":
-                return json.dumps(ret)
+                return Response(response=json.dumps(ret),status=200,mimetype="application/json")
             elif format == "html":
                 out = ""
                 for obj in ret:
@@ -56,7 +56,7 @@ def chat():
                     out += obj.get("steamname")+" "
                     out += "("+obj.get("playername")+"): "
                     out += obj.get("text")+"<br>"
-                return out
+                return Response(response=out,status=200,mimetype="text/html")
     if command=="send":
         usr=request.args.get("username")
         msg=request.args.get("message")
@@ -73,4 +73,4 @@ def chat():
         )
         if out[1]:
             return Response("500 - Couldn't send message: "+output[1],500)
-        return "ok"
+        return Response(response="ok",status=200,mimetype="text/html")

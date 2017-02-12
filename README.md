@@ -6,7 +6,7 @@
 * ark_start.sh - bash; My personal startup script
 * ark_statistics.sh - bash; Creates a json file with play-times
 * ark_update.sh - bash; Update ARK and ARK mods
-* ark_xpose.py - python; RESTful API to provide informations and manage profiles/savegames
+* ark_xpose.py - python; Provide functions built on top of ark for access via web.
 * mcrcon - bundled;native; A tiny third party rcon client for linux x86 
 
 ### A word from my side
@@ -37,7 +37,7 @@ _(Assuming the Game structure keeps the same)_
 ---
 
 #### Homepage
-The point of this is to use the RESTful API via ajax requests.
+The point of this is to use this API via ajax requests.
 I might provide some snipptes but the setup is up to you.
 The API binds to port 6001 per default.
 
@@ -50,4 +50,4 @@ The API binds to port 6001 per default.
 * perl
 * python3
 * python3 chardet (pip3)
-* Python3 flask, flask-openid (pip3)
+* Python3 flask, flask-openid, flask-cors (pip3)

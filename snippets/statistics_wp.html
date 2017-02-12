@@ -1,0 +1,162 @@
+<div id="playercharts" style="margin: 0px; padding: 0px; color: green;">
+<ul id="err_holder" style="color: #b35049; margin: 0px; padding: 0px; font-weight: bold;">
+ 	<li id="err_cantparse" style="display: none;">Can't parse serialized database</li>
+ 	<li id="err_nocon" style="display: none;">Unable to retrieve data</li>
+</ul>
+<div id="playersonline" style="min-height: 0px;">
+<h3>Online:</h3>
+<div id="playersonline_list"></div>
+</div><br>
+
+<div id="playeroffline" style="min-height: 0px;">
+<h3>Offline:</h3>
+<div id="playersoffline_list" style="color: red;"></div>
+</div><br>
+
+<div id="playersgone" style="min-height: 0px;">
+<h3>Inactive (7 days):</h3>
+<div id="playersgone_list" style="color: gray;"></div>
+</div><br>
+
+<div id="playeronserver" style="min-height: 500px;"></div>
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+	var playeronserver = null;
+	var playersonline = null;
+	var playersoffline = null;
+	var playersgone = null;
+	var playersonline_list = null;
+	var playersoffline_list = null;
+	var playersgone_list = null;
+	var jsondata = null;
+	$("#playercharts").ready(function(){
+		playeronserver = $("#playeronserver");
+		playersonline = $("#playersonline");
+		playersoffline = $("#playersoffline");
+		playersgone = $("#playersgone");
+		playersonline_list = $("#playersonline_list");
+		playersoffline_list = $("#playersoffline_list");
+		playersgone_list = $("#playersgone_list");
+		google.charts.load('current', {'packages':['corechart']});
+		google.charts.setOnLoadCallback(startFlow);
+	})
+	$( window ).resize(function() {
+		if(jsondata){
+			mkChart(jsondata);
+		}
+	})
+	function startFlow(){
+		var container = $("#playercharts");
+		var err_cantparse = $("#err_cantparse")
+		var err_nocon = $("#err_nocon")
+		function updateme(){
+			$.ajax({
+			type: "GET",
+			url: "http://ark420-the.center:6001/serverstats?scope=all",
+			async: true,
+			cache: false,
+			success: function(data){
+				console.log(data)
+				if($(err_nocon).is(":visible")){
+					$(err_nocon).fadeOut(100)
+				}
+				try{
+					jsondata=data;
+					if($(err_cantparse).is(":visible")){
+						$(err_cantparse).fadeOut(100)
+					}
+				}catch(err){
+					if(!$(err_cantparse).is(":visible")){
+						$(err_cantparse).fadeIn(100)
+					}
+				}
+				if(jsondata){
+					mkChart(jsondata);
+					mkPlayerstatus(jsondata);
+				}
+				setTimeout(function(){
+					updateme();
+				},30000)
+			},
+			error: function(data){
+				if(!$(err_nocon).is(":visible")){
+					$(err_nocon).fadeIn(100)
+				}
+			}
+			})
+		}
+		updateme();
+	}
+	function mkChart(json_playerdb){
+		mkPie(json_playerdb);
+	}
+	function mkPie(json_playerdb){
+		var timePerPlayer=[];
+		var total=0.0;
+		timePerPlayer.push(["Steam name","Hours played"])
+		jQuery.each(json_playerdb, function(){
+			playername=this.name;
+			//playerprofile=getSteamProfile(this.steamid);
+			timeplayed=sth(this.timeplayed);
+			var atc=[playername+"  "+String(timeplayed)+"h", timeplayed];
+			timePerPlayer.push(atc);
+			total+=this.timeplayed
+		})
+		total=sth(total)
+		chartData = google.visualization.arrayToDataTable(timePerPlayer);
+		var options = {
+			title: "Hours played on this server ("+total+"h) by:",
+			pieSliceText: "value",
+			is3D: true,
+			titleTextStyle:{
+				color: "green"		
+			},
+			pieSliceTextStyle: {
+						color: "white"
+				},
+			legendTextStyle: {
+						color: "green",
+				bold: true
+				},
+			chartArea:{
+				"width": "100%",
+				"height": "70%"
+			},
+			backgroundColor: "#000000",
+			sliceVisibilityThreshold: 0.002,
+			legend:{
+				position:"labeled"
+			}		
+		};
+		chart = new google.visualization.PieChart($(playeronserver)[0]);
+		chart.draw(chartData, options);
+	}
+	function mkPlayerstatus(json_playerdb){
+		jQuery.each(json_playerdb, function(){
+			playername=this.name;
+			playerprofile=getSteamProfile(this.steamid);
+			playerid=this.steamid;
+			lastseen=this.lastseen;
+			now = new Date().getTime() / 1000;
+			if(now-lastseen < 126){
+				putPlayerToList(playername,playerprofile,playerid,$(playersonline_list),"green");
+			}else if(now-lastseen < 604800){ putPlayerToList(playername,playerprofile,playerid,$(playersoffline_list),"#b2533e"); }else{ putPlayerToList(playername,playerprofile,playerid,$(playersgone_list),"#9b9b9b"); } }) } function putPlayerToList(name,profile,id,destList,color){ var strid = "#"+String(id); if($(destList).find(strid).length == 0){ var fonline = $(playersonline_list).find(strid); var foffline = $(playersoffline_list).find(strid); var fgone = $(playersgone_list).find(strid); if($(fonline).length > 0){
+				$(fonline).remove();
+			}else if($(foffline).length > 0){
+				$(foffline).remove();
+			}else if($(fgone).length > 0){
+				$(fgone).remove();
+			}
+			$(destList).append("<span style=\"color:"+color+"\" id=\""+String(id)+"\"><u><a style=\"color:"+color+";\" href=\""+profile+"\">"+name+"</a></u>,  </span>");
+		}
+	}
+	function sth(seconds){
+		var hrs = (parseInt(seconds)/60)/60;
+		return Math.round(hrs * 10) /10;
+	}
+	function getSteamProfile(steamid){
+		return "http://steamcommunity.com/profiles/"+String(steamid);
+	}
+</script>
