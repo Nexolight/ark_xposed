@@ -4,7 +4,8 @@ import json
 import re
 from datetime import datetime
 from flask import Blueprint, request, Response
-from xposed import cfgh,cmd,l
+from xposed import cfgh,l
+from sharedsrc.cmd_helper import CMD
 from xposed.xposed_auth import requires_openid,requires_role
 xposed_chat_bp = Blueprint("xposed_chat", __name__)
 
