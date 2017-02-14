@@ -1,10 +1,9 @@
 import subprocess
 import os
 import logging
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)-8s %(name)-11s %(message)s")
 class CMD(object):
     def __init__(self):
-        self.l = logging.getLogger(self.__class__.__name__)
+        self.l = logging.getLogger(__name__+"."+self.__class__.__name__)
 
     def proc(self, args, env=None, proctimeout=5, cwd=None, encoding=None):
         '''
@@ -32,7 +31,7 @@ class CMD(object):
                 output=stdoutdata.decode(encoding)
                 errors=stderrdata.decode(encoding)
             except UnicodeDecodeError:#In some rare cases
-                self.local.l.warn("UnicodeDecodeError - cannot read output")
+                self.l.warn("UnicodeDecodeError - cannot read output")
                 output=stdoutdata
                 errors=stderrdata
         except subprocess.TimeoutExpired:#Self explaining

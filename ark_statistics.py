@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+from sharedsrc.logger import STATISTICS_LOG
+import logging.config
+logging.config.dictConfig(STATISTICS_LOG)
 import threading
 import multiprocessing
 import sys
@@ -8,14 +11,12 @@ from sharedsrc.playerdb_helper import PlayerJSONEncoder, PlayerJSONDecoder, Play
 from sharedsrc.cmd_helper import CMD
 import re
 import os
-import logging
 import time
 import chardet
 from sharedsrc.conf_helper import ConfHelper
 cfgh = ConfHelper(update=True, autoupdate=True)
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)-8s %(name)-11s %(message)s")
 
-class Main(object):
+class Statistics(object):
     '''
     Just the main class
     '''
@@ -24,7 +25,7 @@ class Main(object):
     def __init__(self):
         self.l = logging.getLogger(self.__class__.__name__)
         self.l.info("Initialized ARK statistics tool")
-        worker = Worker(self.spath)
+        worker = StWorker(self.spath)
         worker.start()
         try:
             while True:
@@ -41,7 +42,7 @@ class Main(object):
             sys.exit(0)
 
 
-class Worker(threading.Thread):
+class StWorker(threading.Thread):
     '''
     Do the work in threads
     '''
@@ -51,7 +52,7 @@ class Worker(threading.Thread):
         Initializes the worker
         :param spath: path of this script
         '''
-        super(Worker, self).__init__()
+        super(StWorker, self).__init__()
         self.l = logging.getLogger(self.__class__.__name__)
         self._stopit = threading.Event()
         self.activeTasks = []
@@ -164,4 +165,4 @@ class Worker(threading.Thread):
         return self._stopit.isSet()
 
 if __name__ == '__main__':
-    Main()
+    Statistics()

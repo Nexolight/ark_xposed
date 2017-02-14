@@ -1,4 +1,3 @@
-
 import json
 from json.decoder import JSONDecoder
 from json.encoder import JSONEncoder
@@ -7,7 +6,6 @@ from sharedsrc.conf_helper import ConfHelper
 import os
 import sys
 import logging
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)-8s %(name)-20s %(message)s")
 
 class PlayerDBHelper(object):
     '''
@@ -19,7 +17,8 @@ class PlayerDBHelper(object):
         :param autoupdate: Automatically update the cache on db changes.
         :param cfgh: a ConfHelper instance. It is created when not given.
         '''
-        self.l = logging.getLogger(self.__class__.__name__)
+        self.l = logging.getLogger(__name__+"."+self.__class__.__name__)
+        self.l.propagate=True
         self.playerdb=[]
         self.fw = None
         self.cfgh = cfgh
@@ -40,17 +39,14 @@ class PlayerDBHelper(object):
         if self.fw:
             self.fw.registerObserver(filepath=self.dbpath, interval=1, callback=self.updatePlayerDB, unique=True, gone=self._recoverDBObserver)
         try:
-            tmpplayerdb=[]
             with open(self.dbpath, "r") as f:
-                for player in json.loads(f.read(),cls=PlayerJSONDecoder):
-                    tmpplayerdb.append(player)
-            self.playerdb=tmpplayerdb
+                self.playerdb = json.loads(f.read(),cls=PlayerJSONDecoder)
         except Exception as e:
-            self.l.e("Cannot update playerdb cache: "+str(e))
+            self.l.error("Cannot update playerdb cache: "+str(e))
             
     def _recoverDBObserver(self):
         if self.fw:
-            self.dbpath = dbpath=os.path.join(sys.argv[0], self.cfgh.readCfg("STATS_PLAYERDB"))
+            self.dbpath = os.path.join(sys.argv[0], self.cfgh.readCfg("STATS_PLAYERDB"))
             self.updatePlayerDB()
     
     def getPlayerDB(self):

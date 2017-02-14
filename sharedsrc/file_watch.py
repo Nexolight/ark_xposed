@@ -3,7 +3,6 @@ import os
 import time
 import threading
 import multiprocessing
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)-8s %(name)-11s %(message)s")
 
 class FileWatch(object):
     '''
@@ -12,7 +11,7 @@ class FileWatch(object):
     changes.
     '''
     def __init__(self):
-        self.l = logging.getLogger(self.__class__.__name__)
+        self.l = logging.getLogger(__name__+"."+self.__class__.__name__)
         self.l.info("FileWatch initialized");
         self.observers = {}
         self.worker = None
@@ -70,7 +69,7 @@ class FWWorker(threading.Thread):
     '''
     def __init__(self, observers):
         super(FWWorker, self).__init__()
-        self.l = logging.getLogger(self.__class__.__name__)
+        self.l = logging.getLogger(__name__+"."+self.__class__.__name__)
         self._stopit = threading.Event()
         self.l.info("Initialized FileWatch worker")
         self.observers = observers

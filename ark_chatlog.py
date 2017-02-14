@@ -1,18 +1,19 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+from sharedsrc.logger import CHATLOG_LOG
+import logging.config
+logging.config.dictConfig(CHATLOG_LOG)
 import threading
 import multiprocessing
 import sys
 from sharedsrc.cmd_helper import CMD
 import re
 import os
-import logging
 import time
 from sharedsrc.conf_helper import ConfHelper
 cfgh = ConfHelper(update=True, autoupdate=True)
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)-8s %(name)-11s %(message)s")
 
-class Main(object):
+class Chatlog(object):
     '''
     Just the main class
     '''
@@ -120,4 +121,4 @@ class CLWorker(threading.Thread):
         return self._stopit.isSet()
 
 if __name__ == '__main__':
-    Main()
+    Chatlog()

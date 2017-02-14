@@ -4,7 +4,6 @@ import sys
 import re
 import logging
 from sharedsrc.file_watch import FileWatch
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)-8s %(name)-20s %(message)s")
 
 class ConfHelper(object):
     '''
@@ -17,7 +16,7 @@ class ConfHelper(object):
         :param update: Initialy read all configs. Set this to false when you don't need all of them.
         :param autoupdate: Update cache on changes. This is triggered after initially updating the files.
         '''
-        self.l = logging.getLogger(self.__class__.__name__)
+        self.l = logging.getLogger(__name__+"."+self.__class__.__name__)
         self.xposed_cfg=[]
         self.arkgus=[]
         self.fw = None

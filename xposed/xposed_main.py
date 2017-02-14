@@ -1,4 +1,4 @@
-from xposed import cfgh,l
+from xposed import l,cfgh
 from flask import Flask, Response
 from xposed.xposed_utils import Utils
 from flask_session import Session
@@ -23,12 +23,13 @@ from xposed.xposed_chat import xposed_chat_bp
 
 class XPosed(object):
     def __init__(self):
+        l.info("Xposed WEB API Initializing!")
         #xposed.register_blueprint(xposed_profiles)
         xposed.register_blueprint(xposed_stats_bp)
         xposed.register_blueprint(xposed_conf_bp)
         xposed.register_blueprint(xposed_profile_bp)
         xposed.register_blueprint(xposed_chat_bp)
-        xposed.run(port=int(cfgh.readCfg("XPOSED_PORT")), host=cfgh.readCfg("XPOSED_BIND"))
+        xposed.run(port=int(cfgh.readCfg("XPOSED_PORT")), host=cfgh.readCfg("XPOSED_BIND"), threaded=True)
 
 @xposed.route("/", methods=['GET', 'POST'])
 def hello_world():
