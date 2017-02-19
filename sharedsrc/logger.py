@@ -97,3 +97,16 @@ CHATLOG_LOG={
 		}
 	}
 }
+
+TEST_LOG={
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': _HANDLERS,
+    'formatters':_FORMATERS,
+    'loggers': {
+        '': {
+            'level':'DEBUG',
+            'handlers':['console']
+        }
+    }
+}

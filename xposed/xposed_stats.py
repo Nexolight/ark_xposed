@@ -27,8 +27,8 @@ def getStats():
         steamname=request.args.get("name")
         if(not steamname):
             return Response("400 - Missing param",400)
-        players = pdbh.getPlayersByName(steamname);
-        if(players):
+        player = pdbh.getPlayersByName(steamname);
+        if(player):
             return Response(response=json.dumps(player[0], cls=PlayerJSONEncoder),status=200,mimetype="application/json")
         return Response("404 - steamid: "+steamname+" not found",404)
     else:

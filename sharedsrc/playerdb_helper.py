@@ -72,7 +72,7 @@ class PlayerDBHelper(object):
         players=[]
         for player in self.playerdb:
             if player.name == name:
-                player.append(player)
+                players.append(player)
         if(len(players)==0):
             return None
         return players
@@ -87,7 +87,8 @@ class PlayerJSONEncoder(JSONEncoder):
                 "steamid":object.steamid,
                 "lastseen":object.lastseen,
                 "timeplayed":object.timeplayed,
-                "firstseen":object.firstseen
+                "firstseen":object.firstseen,
+                "isonline":object.isonline
             }
             return obj
         else:
@@ -105,6 +106,7 @@ class PlayerJSONDecoder(JSONDecoder):
             lastseen=object.get("lastseen"),
             timeplayed=object.get("timeplayed"),
             firstseen=object.get("firstseen"),
+            isonline=object.get("isonline")
         )
         return res       
         
@@ -115,7 +117,8 @@ class Player(object):
         steamid=0,
         lastseen=0,
         timeplayed=0,
-        firstseen=0
+        firstseen=0,
+        isonline=False
     ):
         self.no=no
         self.name=name
@@ -123,3 +126,4 @@ class Player(object):
         self.lastseen=lastseen
         self.timeplayed=timeplayed
         self.firstseen=firstseen
+        self.isonline=isonline

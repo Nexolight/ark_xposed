@@ -5,6 +5,7 @@
 *.pydev
 *.project
 *.log
+*.log.*
 *.json
 *.txt
 xposed_data

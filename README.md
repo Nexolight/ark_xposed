@@ -50,4 +50,5 @@ The API binds to port 6001 per default.
 * perl
 * python3
 * python3 chardet (pip3)
-* Python3 flask, flask-openid, flask-cors (pip3)
+* Python3 flask, flask-openid, flask-cors, py4j (pip3)
+* Java 8
