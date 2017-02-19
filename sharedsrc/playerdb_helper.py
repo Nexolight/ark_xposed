@@ -46,7 +46,7 @@ class PlayerDBHelper(object):
             
     def _recoverDBObserver(self):
         if self.fw:
-            self.dbpath = os.path.join(sys.argv[0], self.cfgh.readCfg("STATS_PLAYERDB"))
+            self.dbpath = os.path.join(os.path.dirname(sys.argv[0]), self.cfgh.readCfg("STATS_PLAYERDB"))
             self.updatePlayerDB()
     
     def getPlayerDB(self):

@@ -81,9 +81,9 @@ class StWorker(threading.Thread):
         Create the direcotry of the path if it doesn't exist
         :param abspath:
         '''
-        if not os.path.exists(os.path.dirname(abspath)):
-            self.l.warn("Created folder "+os.path.dirname(abspath))
-            os.mkdir(os.path.dirname(abspath))
+        if not os.path.exists(abspath):
+            self.l.warn("Created folder "+abspath)
+            os.mkdir(abspath)
 
     def fetchPlayerInfo(self):
         fPI = threading.Thread(target=self.__fetchPlayerInfo)
@@ -103,7 +103,6 @@ class StWorker(threading.Thread):
             self.l.warn("Fetching players failed!")
             self.l.error(output[1])
         if output[0]:
-            
             #===================================================================
             # Load all existing players
             #===================================================================
@@ -155,10 +154,15 @@ class StWorker(threading.Thread):
                         self.l.info("added new player \""+str(player.name)+"\" to db.")
                         
             for plr in players:
-                if plr not in changedp:
-                    plr.isonline=False
-                else:
+                if plr not in changedp:#This player logged out.
+                    if plr.isonline:
+                        plr.isonline=False
+                        self.l.info("Player: "+plr.name+" is now offile")
+                        self.processPlayerProfile(plr.steamid)
+                elif not plr.isonline:#This player just logged in.
                     plr.isonline=True
+                    self.l.info("Player: "+plr.name+" is now online")
+                    self.processPlayerProfile(plr.steamid)
 
             self.lock.acquire()
             file = open(os.path.join(self.spath,cfgh.readCfg("STATS_PLAYERDB")), "w+")
@@ -166,7 +170,27 @@ class StWorker(threading.Thread):
             file.close()
             self.lock.release()
 
+    def processPlayerProfile(self,steamid):
+        fPI = threading.Thread(target=self.__processPlayerProfile,args=(steamid,))
+        self.queue.append(fPI)
 
+    def __processPlayerProfile(self,steamid):
+        self.l.info("Extracting profile info from: "+steamid+".arkprofile")
+        extractor=os.path.join(self.spath,"thirdparty/ark-tools-jar-with-dependencies.jar")
+        outfolder=os.path.join(self.spath,cfgh.readCfg("STATS_PLAYERPROFILES"))
+        self.l.debug(outfolder)
+        savegame=os.path.join(cfgh.readCfg("ARKDIR"),"ShooterGame/Saved/SavedArks/"+steamid+".arkprofile")
+        self.lock.acquire()
+        self.folderhealth(outfolder)
+        self.lock.release()
+        args=[
+            "java", "-jar", extractor,
+            "p2j",
+            savegame,
+            os.path.join(outfolder,steamid+".json")
+        ]
+        self.cmd.proc(args)
+        #self.l.debug(out)
 
     def fetchServerInfo(self):
         fSI = threading.Thread(target=self.__fetchServerInfo, args=(updateStats))
