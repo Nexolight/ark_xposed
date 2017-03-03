@@ -21,6 +21,7 @@ class ChatlogHelper(object):
         self.cfgh = cfgh
         if not cfgh:
             self.cfgh = ConfHelper()
+        self.cmd = CMD()
         self.chatlogpath = dbpath=os.path.join(os.path.dirname(sys.argv[0]), self.cfgh.readCfg("CHATLOG_DB"))
         if autoupdate:
             self.fw = FileWatch()
@@ -41,6 +42,30 @@ class ChatlogHelper(object):
         :param callback:
         '''
         self.subscribers.pop(callback)
+    
+    
+    def sendAll(self, name, message, steamid=None):
+        '''
+        Send a message via RCON to all players
+        :param steamid: SteamID optional to indentify the player within the chatlog later.
+        :param name: Name which will appear within the message
+        :param message: Text.
+        '''
+        rconcmd="ServerChat "
+        if steamid:
+            rconcmd+=steamid+"-"
+        rconcmd+=name+":"+message
+        out=self.cmd.proc(
+            args=[
+                os.path.join(spath, "thirdparty/mcrcon"), "-c",
+                "-H", "127.0.0.1",
+                "-P", self.cfgh.readGUSCfg("RCONPort"),
+                "-p", self.cfgh.readGUSCfg("ServerAdminPassword"),
+                "ServerChat -"+name+": "+message
+            ]
+        )
+        return out[1];
+        
             
     def updateChatlog(self, initial=False):
         '''
