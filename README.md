@@ -47,6 +47,7 @@ The API binds to port 6001 per default.
 * common linux tools
 * mcrcon (bundled)
 * dos2unix
+* gettext
 * perl
 * python3
 * python3 chardet (pip3)

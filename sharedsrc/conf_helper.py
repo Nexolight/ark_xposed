@@ -73,7 +73,7 @@ class ConfHelper(object):
         for l in self.xposed_cfg:
             matches = re.search("^\s*"+setting+"\s*\=\s*(.+)$",l)
             if matches:
-                return matches.group(1)
+                return os.path.expandvars(matches.group(1))
         return None
     
     def readGUSCfg(self, setting, filterPW=False):

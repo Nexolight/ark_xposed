@@ -2,7 +2,7 @@
 SCRIPT=$(realpath $0)
 SCRIPTPATH=$(dirname $SCRIPT)
 function getFromCfg(){
-	cat $SCRIPTPATH/xposed.cfg | grep -Po "(?<=^$1\=)(.*)$" | tr -d '\n'
+	cat $SCRIPTPATH/xposed.cfg | grep -Po "(?<=^$1\=)(.*)$" | tr -d '\n' | envsubst 
 }
 function getFromArkCfg(){
 	FILE="$(getFromCfg ARKDIR)/ShooterGame/Saved/Config/LinuxServer/GameUserSettings.ini"
@@ -14,13 +14,12 @@ STEAMDIR="$(getFromCfg STEAMDIR)"
 #The folder where steamcmd downloads the mods and lists them named by their mod id
 STEAMMODDIR="$STEAMDIR/steamapps/workshop/content/346110"
 #You're not forced to place your server startup script there. Just give enter the full path of the script
-STARTUPSCRIPT="$SCRIPTPATH/$(getFromCfg STARTUP_SCRIPT)"
+STARTUPSCRIPT="$(getFromCfg STARTUP_SCRIPT)"
 #The ARK root directory
 GAMEDIR="$(getFromCfg ARKDIR)"
 #The full path to the GameUserSettings.ini
 BASECONFIG=$GAMEDIR/ShooterGame/Saved/Config/LinuxServer/GameUserSettings.ini
 MMHINT="\n\nIf you get a version missmatch after the restart then delete your local (outdated) mod version to force steam to redownload it. See ark420-the.center --> faq (right side)\nhttp://ark420-the.center/index.php/faq/"
-
 #Steam user
 #No explination needed
 STEAMUSER="anonymous"
