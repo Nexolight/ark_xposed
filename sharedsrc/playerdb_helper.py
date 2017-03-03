@@ -6,6 +6,7 @@ from sharedsrc.conf_helper import ConfHelper
 import os
 import sys
 import logging
+import re
 
 class PlayerDBHelper(object):
     '''
@@ -25,6 +26,7 @@ class PlayerDBHelper(object):
         if not cfgh:
             self.cfgh = ConfHelper()
         self.dbpath = dbpath=os.path.join(os.path.dirname(sys.argv[0]), self.cfgh.readCfg("STATS_PLAYERDB"))
+        self.svgpath = os.path.join(os.path.dirname(sys.argv[0]), self.cfgh.readCfg("STATS_PLAYERPROFILES"))
         if autoupdate:
             self.fw = FileWatch()
             self.fw.startWatching()
@@ -40,7 +42,14 @@ class PlayerDBHelper(object):
             self.fw.registerObserver(filepath=self.dbpath, interval=1, callback=self.updatePlayerDB, unique=True, gone=self._recoverDBObserver)
         try:
             with open(self.dbpath, "r") as f:
-                self.playerdb = json.loads(f.read(),cls=PlayerJSONDecoder)
+                pdb=[]
+                for player in json.loads(f.read(),cls=PlayerJSONDecoder):
+                    player.savegames=self._readPlayerSavegames(player.steamid)
+                    pdb.append(player)
+                if len(pdb) > 0:
+                    self.playerdb = pdb
+                else:
+                    self.l.warn("(Pass update) The file looks empty at a point where it shouldn't")
         except Exception as e:
             self.l.error("Cannot update playerdb cache: "+str(e))
             
@@ -48,6 +57,32 @@ class PlayerDBHelper(object):
         if self.fw:
             self.dbpath = os.path.join(os.path.dirname(sys.argv[0]), self.cfgh.readCfg("STATS_PLAYERDB"))
             self.updatePlayerDB()
+            
+    def _readPlayerSavegames(self, steamid):
+        '''
+        Read the preprocessed savegames from arktools which may or may not be
+        available depending on the individual setup
+        
+        TODO: Implement multi savegames
+        :param steamid:
+        '''
+        try:
+            profiles=[]
+            for svg in os.listdir(self.svgpath):
+                #===============================================================
+                # Match is a placeholder for later coming multiple profiles
+                # <steamid>.<playerid>.<ingame name>.json or <steamid>.json
+                #===============================================================
+                if re.match("^("+steamid+"\.[0-9]\..+|"+steamid+")\.json",svg): 
+                    with open(os.path.join(self.svgpath,svg)) as f:
+                        self.l.debug("caching "+steamid+".json for player "+steamid)
+                        profiles.append(json.loads(f.read()))
+            return profiles
+        except FileNotFoundError as e:
+            self.l.warn("(Ignore) No preprocessed savegame found for player "+steamid)
+        except Exception as e:
+            self.l.warn("(Ignore ) Something went wrong: "+str(e))
+        return []
     
     def getPlayerDB(self):
         '''
@@ -83,12 +118,13 @@ class PlayerJSONEncoder(JSONEncoder):
         if isinstance(object, Player):
             obj = {
                 "no":object.no,
-                "name":str(object.name),
+                "name":object.name,
                 "steamid":object.steamid,
                 "lastseen":object.lastseen,
                 "timeplayed":object.timeplayed,
                 "firstseen":object.firstseen,
-                "isonline":object.isonline
+                "isonline":object.isonline,
+                "savegames":object.savegames
             }
             return obj
         else:
@@ -106,24 +142,40 @@ class PlayerJSONDecoder(JSONDecoder):
             lastseen=object.get("lastseen"),
             timeplayed=object.get("timeplayed"),
             firstseen=object.get("firstseen"),
-            isonline=object.get("isonline")
+            isonline=object.get("isonline"),
+            savegames=object.get("savegames")
         )
         return res       
         
 class Player(object):
     def __init__(self,
-        no=0,
-        name="unknown",
-        steamid=0,
-        lastseen=0,
-        timeplayed=0,
-        firstseen=0,
-        isonline=False
+        no=None,
+        name=None,
+        steamid=None,
+        lastseen=None,
+        timeplayed=None,
+        firstseen=None,
+        isonline=None,
+        savegames=None
     ):
-        self.no=no
-        self.name=name
-        self.steamid=steamid
-        self.lastseen=lastseen
-        self.timeplayed=timeplayed
-        self.firstseen=firstseen
-        self.isonline=isonline
+        self.no=Player.ifndef(no,0)
+        self.name=Player.ifndef(name,"unknown")
+        self.steamid=Player.ifndef(steamid,0)
+        self.lastseen=Player.ifndef(lastseen,0)
+        self.timeplayed=Player.ifndef(timeplayed,0)
+        self.firstseen=Player.ifndef(firstseen,0)
+        self.isonline=Player.ifndef(isonline,False)
+        self.savegames=Player.ifndef(savegames,[])
+        
+    @staticmethod
+    def ifndef(val, default):
+        '''
+        Worarkound some updates
+        :param val:
+        :param default:
+        '''
+        if val == None:
+            return default
+        return val
+            
+    

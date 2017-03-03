@@ -1,5 +1,12 @@
 import logging
 import copy
+import time as _time
+import json
+import os
+import sys
+import re
+from json.decoder import JSONDecoder
+from json.encoder import JSONEncoder
 from sharedsrc.file_watch import FileWatch
 from sharedsrc.cmd_helper import CMD
 from sharedsrc.conf_helper import ConfHelper
@@ -15,6 +22,7 @@ class ChatlogHelper(object):
         :param cfgh: a ConfHelper instance. It is created when not given.
         '''
         self.l = logging.getLogger(__name__+"."+self.__class__.__name__)
+        self.spath=os.path.dirname(sys.argv[0])
         self.chatlog=[]
         self.subscribers=[]
         self.fw = None
@@ -42,7 +50,9 @@ class ChatlogHelper(object):
         :param callback:
         '''
         self.subscribers.pop(callback)
-    
+        
+    def getChatlog(self):
+        return self.chatlog
     
     def sendAll(self, name, message, steamid=None):
         '''
@@ -57,14 +67,14 @@ class ChatlogHelper(object):
         rconcmd+=name+":"+message
         out=self.cmd.proc(
             args=[
-                os.path.join(spath, "thirdparty/mcrcon"), "-c",
+                os.path.join(self.spath, "thirdparty/mcrcon"), "-c",
                 "-H", "127.0.0.1",
                 "-P", self.cfgh.readGUSCfg("RCONPort"),
                 "-p", self.cfgh.readGUSCfg("ServerAdminPassword"),
                 "ServerChat -"+name+": "+message
             ]
         )
-        return out[1];
+        return out[1]; #Return errors
         
             
     def updateChatlog(self, initial=False):
@@ -76,15 +86,15 @@ class ChatlogHelper(object):
         
         #ALLOW UPDATE THE CACHE LINE BY LINE
         
-        lines=int(cfgh.readCfg("XPOSED_FNC_CHAT_MAX_COMPARE"))
+        lines=int(self.cfgh.readCfg("XPOSED_FNC_CHAT_MAX_COMPARE"))
         if initial:
-            lines=int(cfgh.readCfg("XPOSED_FNC_CHAT_MAX_FETCH"))
+            lines=int(self.cfgh.readCfg("XPOSED_FNC_CHAT_MAX_FETCH"))
         if self.fw:
             self.fw.registerObserver(filepath=self.chatlogpath, interval=1, callback=self.updateChatlog, unique=True, gone=self._recoverChatlogObserver)
         try:
-            output = cmd.proc(["tail","-n",str(lines), os.path.join(spath,cfgh.readCfg("CHATLOG_DB"))])
+            output = self.cmd.proc(["tail","-n",str(lines), os.path.join(self.spath,self.cfgh.readCfg("CHATLOG_DB"))])
             if output[1]:
-                self.l.e("Error during chatlog read: "+output[1])
+                self.l.error("Error during chatlog read: "+output[1])
             if output[0]:
                 for line in output[0].split("\n"):
                     lifo=re.search("([0-9]+)\:(.+)\s\((.+)\)\:\s(.+)",line)
@@ -95,12 +105,12 @@ class ChatlogHelper(object):
                     elif lifo2 and len(lifo2.groups()) > 3:
                         flifo=lifo2
                     if flifo:
-                        message={
-                            "time":flifo.group(1),
-                            "steamname":flifo.group(2),
-                            "playername":flifo.group(3),
-                            "text":flifo.group(4)
-                        }
+                        message=Message(
+                            time=int(flifo.group(1)),
+                            steamname=flifo.group(2),
+                            playername=flifo.group(3),
+                            text=flifo.group(4)
+                        )
                         if initial:
                             self.chatlog.append(message)
                             continue
@@ -111,7 +121,7 @@ class ChatlogHelper(object):
                                     sub(message)
                                 else:
                                     self.unsubscribe(sub)
-                            if len(self.chatlog) > int(cfgh.readCfg("XPOSED_FNC_CHAT_MAX_FETCH")):
+                            if len(self.chatlog) > int(self.cfgh.readCfg("XPOSED_FNC_CHAT_MAX_FETCH")):
                                 self.chatlog.pop(0)
         except Exception as e:
             self.l.error("Cannot update chatlog cache: "+str(e))
@@ -120,3 +130,52 @@ class ChatlogHelper(object):
         if self.fw:
             self.dbpath = os.path.join(sys.argv[0], self.cfgh.readCfg("CHATLOG_DB"))
             self.updateChatlog()
+            
+class MessageJSONEncoder(JSONEncoder):
+    def default(self, object):
+        if isinstance(object, Message):
+            obj = {
+                "steamname":object.steamname,
+                "playername":object.playername,
+                "time":object.time,
+                "text":object.text
+            }
+            return obj
+        else:
+            #Use the defaults for everything else
+            return JSONEncoder.default(self, object)
+
+class MessageJSONDecoder(JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.decodeMessage, *args, **kwargs)
+    def decodeMessage(self, object):
+        res = Message(
+            steamname=object.get("steamname"),
+            playername=object.get("playername"),
+            time=object.get("time"),
+            text=object.get("text")
+        )
+        return res       
+        
+class Message(object):
+    def __init__(self,
+        steamname=None,
+        playername=None,
+        time=None,
+        text=None
+    ):
+        self.steamname=Message.ifndef(steamname,"Unknown")
+        self.playername=Message.ifndef(playername,"unknown")
+        self.time=Message.ifndef(time,_time.time())
+        self.text=Message.ifndef(text,"Lorem Ipsum")
+        
+    @staticmethod
+    def ifndef(val, default):
+        '''
+        Worarkound some updates
+        :param val:
+        :param default:
+        '''
+        if val == None:
+            return default
+        return val

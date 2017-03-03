@@ -163,12 +163,12 @@ class StWorker(threading.Thread):
                     plr.isonline=True
                     self.l.info("Player: "+plr.name+" is now online")
                     self.processPlayerProfile(plr.steamid)
-
-            self.lock.acquire()
-            file = open(os.path.join(self.spath,cfgh.readCfg("STATS_PLAYERDB")), "w+")
-            json.dump(players,file,cls=PlayerJSONEncoder)
-            file.close()
-            self.lock.release()
+            if len(changedp) > 0:#only on changes
+                self.lock.acquire()
+                file = open(os.path.join(self.spath,cfgh.readCfg("STATS_PLAYERDB")), "w+")
+                json.dump(players,file,cls=PlayerJSONEncoder)
+                file.close()
+                self.lock.release()
 
     def processPlayerProfile(self,steamid):
         fPI = threading.Thread(target=self.__processPlayerProfile,args=(steamid,))
