@@ -111,8 +111,66 @@ class PlayerDBHelper(object):
         if(len(players)==0):
             return None
         return players
-        
     
+    
+    #===========================================================================
+    # Savegame profile access functions
+    #===========================================================================
+    def getSvgPlayerName(self, svg):
+        self.l.debug("Seeking PlayerName")
+        return self._getSvgProperty(
+            props=self._getSvgPrimalPlayerData(svg),
+            prop="PlayerName",
+            type="StrProperty",
+        )
+    
+    def getActiveSvg(self, player):
+        '''
+        Returns the currently active savegame from the given player
+        :param player:
+        '''
+        return self.__getActiveSvg(player)
+    
+    def getActiveSvgByID(self, steamid):
+        '''
+        Returns the currently active savegame from the player
+        with the given steamid
+        :param steamid:
+        '''
+        player=self.getPlayerByID(steamid)
+        return self.__getActiveSvg(player)
+        
+    def __getActiveSvg(self, player):
+        '''
+        TODO: implement multiple profiles
+        :param player:
+        '''
+        if len(player.savegames) > 0:
+            return player.savegames[0]
+        return none
+    
+    #===========================================================================
+    # Internal shorthands to access the json savegame
+    #===========================================================================
+    def _getSvgProfileProperties(self, svg):
+        return svg.get("profile").get("properties")
+    
+    def _getSvgPrimalPlayerData(self, svg):
+        return self._getSvgProperty(
+            props=self._getSvgProfileProperties(svg),
+            prop="MyData",
+            type="StructProperty",
+            structType="PrimalPlayerDataStruct"
+        )
+    
+    def _getSvgProperty(self, props, prop, type, structType=None):
+        for property in props:
+            if property.get("type") == type and property.get("name") == prop:                
+                if type == "StructProperty" and property.get("structType") == structType:
+                    return property.get("value")
+                else:
+                    return property.get("value")
+
 class PlayerJSONEncoder(JSONEncoder):
     def default(self, object):
         if isinstance(object, Player):

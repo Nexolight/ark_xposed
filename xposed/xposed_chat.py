@@ -3,7 +3,7 @@ import sys
 import json
 from datetime import datetime
 from flask import Blueprint, request, Response, g
-from xposed import cfgh,l
+from xposed import cfgh,l,pdbh
 
 from sharedsrc.cmd_helper import CMD
 from sharedsrc.chatlog_helper import ChatlogHelper, Message, MessageJSONEncoder
@@ -50,7 +50,15 @@ def chat():
         msg=request.args.get("message")
         if not usr or not msg:
             return Response("400 - Missing param",400)
-        error=clgh.sendAll(name=usr, message=msg, steamid=g.steamid)
+        playerprofile=pdbh.getActiveSvgByID(steamid="76561197987278684")
+        print(pdbh.getSvgPlayerName(playerprofile))
+        #l.debug(pdbh.getPlayerName(playerprofile))
+        #getStrPropValue
+        error="test"
+        #error=clgh.sendAll(
+        #    name=pdb.getActiveProfileByID(steamid=g.steamid).get("properties").get(""), 
+        #    message=msg, 
+        #    steamid=g.steamid)
         if error:
             return Response("500 - Couldn't send message: "+error,500)
         return Response(response="ok",status=200,mimetype="text/html")
