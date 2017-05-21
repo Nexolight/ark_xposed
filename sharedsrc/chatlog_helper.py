@@ -56,6 +56,8 @@ class ChatlogHelper(object):
     
     def sendAll(self, name, message, steamid=None):
         '''
+        TODO: pass steamname and ingame name
+        
         Send a message via RCON to all players
         :param steamid: SteamID optional to indentify the player within the chatlog later.
         :param name: Name which will appear within the message
@@ -71,7 +73,7 @@ class ChatlogHelper(object):
                 "-H", "127.0.0.1",
                 "-P", self.cfgh.readGUSCfg("RCONPort"),
                 "-p", self.cfgh.readGUSCfg("ServerAdminPassword"),
-                "ServerChat -"+name+": "+message
+                "ServerChat "+name+": "+message
             ]
         )
         return out[1]; #Return errors
