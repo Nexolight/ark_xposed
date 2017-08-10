@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from sharedsrc.logger import CHATLOG_LOG
 import logging.config
+from lib2to3.pgen2.token import AT
 logging.config.dictConfig(CHATLOG_LOG)
 import threading
 import multiprocessing
@@ -62,13 +63,13 @@ class CLWorker(threading.Thread):
     def run(self):
         while not self.isStopped():
             for aT in self.activeTasks:
-                if not aT.isAlive():
+                if aT.get("finished")==True:
                     self.activeTasks.remove(aT)
-            if len(self.queue) > 0 and len(self.activeTasks) < multiprocessing.cpu_count():
-                job = self.queue.pop(0)
-                self.activeTasks.append(job)
-                job.daemon = True
-                job.start()
+            if len(self.queue) > 0 and len(self.activeTasks) < 1: #multiprocessing.cpu_count():
+                jobObj = self.queue.pop(0)
+                self.activeTasks.append(jobObj)
+                jobObj.get("job").daemon = True
+                jobObj.get("job").start()
             else:
                 time.sleep(0.1)
 
@@ -83,30 +84,40 @@ class CLWorker(threading.Thread):
 
     def fetchChatlog(self):
         fPI = threading.Thread(target=self.__fetchChatlog)
-        self.queue.append(fPI)
+        self.queue.append({"job":fPI,"finished":False})
 
     def __fetchChatlog(self):
-        output = self.cmd.proc(
-            args=[
-                os.path.join(self.spath, "thirdparty/mcrcon"), "-c",
-                "-H", "127.0.0.1",
-                "-P", cfgh.readGUSCfg("RCONPort"),
-                "-p", cfgh.readGUSCfg("ServerAdminPassword"),
-                "GetChat"
-            ]
-        )
-        if output[1]:
-            self.l.warn("Fetching players failed!")
-            self.l.error(output[1])
-        if output[0]:
-            filepath=os.path.join(self.spath,cfgh.readCfg("CHATLOG_DB"))
-            self.lock.acquire(True)
-            with open(filepath, "a+") as f:
-                for line in output[0].split("\n"):
-                    if re.match("^.+\:.+$",line) and not re.match("^AdminCmd\:.*",line):
-                        f.write(str(round(time.time() * 1000))+":"+line+"\n")
-            self.lock.release()
-                
+        try:
+            output = self.cmd.proc(
+                args=[
+                    os.path.join(self.spath, "thirdparty/mcrcon"), "-c",
+                    "-H", "127.0.0.1",
+                    "-P", cfgh.readGUSCfg("RCONPort"),
+                    "-p", cfgh.readGUSCfg("ServerAdminPassword"),
+                    "GetChat"
+                ]
+            )
+            if output[1]:
+                self.l.warn("Fetching players failed!")
+                self.l.error(output[1])
+            if output[0]:
+                filepath=os.path.join(self.spath,cfgh.readCfg("CHATLOG_DB"))
+                self.lock.acquire(True)
+                with open(filepath, "a+") as f:
+                    for line in output[0].split("\n"):
+                        if re.match("^.+\:.+$",line) and not re.match("^AdminCmd\:.*",line):
+                            f.write(str(round(time.time() * 1000))+":"+line+"\n")
+                    f.close()
+                self.lock.release()
+        finally:
+            self.__subthread_suicide()
+        
+    def __subthread_suicide(self):
+        self.lock.acquire(True)
+        for aT in self.activeTasks:
+            if aT.get("job")==threading.currentThread():
+                aT.update({"finished":True})
+        self.lock.release()
 
     def stop(self):
         '''
