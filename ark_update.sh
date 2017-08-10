@@ -12,7 +12,7 @@ function getFromArkCfg(){
 #The folder where steamcmd.sh is located
 STEAMDIR="$(getFromCfg STEAMDIR)"
 #The folder where steamcmd downloads the mods and lists them named by their mod id
-STEAMMODDIR="$STEAMDIR/steamapps/workshop/content/346110"
+STEAMMODDIR="$STEAMDIR/steamapps/common/ARK/steamapps/workshop/content/346110"
 #You're not forced to place your server startup script there. Just give enter the full path of the script
 STARTUPSCRIPT="$(getFromCfg STARTUP_SCRIPT)"
 #The ARK root directory
