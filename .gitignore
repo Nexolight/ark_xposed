@@ -8,5 +8,6 @@
 *.log.*
 *.json
 *.txt
+*.bkup
 xposed_data
 flask_session
