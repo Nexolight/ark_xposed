@@ -1,3 +1,9 @@
+# Warning
+This project is entirely WIP and in a relatively stale state. The master branch may break any time.
+Don't expect any tutorials, help with issues or convinience stuff unless it's finished.
+
+I'm personally using it on my server.
+
 # ark_xposed
 **A collection of tools to build extensions for ARK Survival Evolved**
 
