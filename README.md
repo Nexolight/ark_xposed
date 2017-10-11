@@ -8,17 +8,21 @@ I'm personally using it on my server.
 **A collection of tools to build extensions for ARK Survival Evolved**
 
 ## Content
-* ark_health.sh - bash; Restart server on fail.
-* ark_start.sh - bash; My personal startup script
-* ark_statistics.sh - bash; Creates a json file with play-times
-* ark_update.sh - bash; Update ARK and ARK mods
-* ark_xpose.py - python; Provide functions built on top of ark for access via web.
-* mcrcon - bundled;native; A tiny third party rcon client for linux x86 
+* xposed.cfg - Text; Shared config file.
+* ark_health.sh - bash; standalone; Restart server on fail.
+* ark_start.sh - bash; standalone; My personal startup script
+* ark_statistics.sh - bash; standalone; Creates a json file with play-times
+* ark_chatlog.py - python; standalone; Provides a chatlog. This is primary part of the webchat for the xposed api.
+* ark_update.sh - bash; standalone; Update ARK and ARK mods
+* ark_xpose.py - python; standalone; Provide functions built on top of ark for access via web.
+* mcrcon - bundled; native; A tiny third party rcon client for linux x86 
 
 ### A word from my side
 I started with my server and added the scripts over time in order to improve the unattended realiability and provide some stuff which other private ARK servers don't have. 
 
-The latest one (The RESTful API) came to my mind when I wanted to provide some stuff on the servers webpage which require user interactions and such stuff. I already accessed some info via ajax requests and I tought this is the best way to provide the functionality in a loose and easy way.
+Due to that I added a webapi which allows to get some information into any other application.
+The API accesses primary data collected by the standalone programs. And one day may also bring some interactive functionalities.
+
 
 ## Setup
 When using the following setup the stuff provided here should work out of the box.
