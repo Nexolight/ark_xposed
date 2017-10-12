@@ -8,6 +8,9 @@ function getFromArkCfg(){
 	FILE="$(getFromCfg ARKDIR)/ShooterGame/Saved/Config/LinuxServer/GameUserSettings.ini"
 	dos2unix $FILE &> /dev/null && cat $FILE | grep -Po "(?<=^$1\=)(.*)$" | tr -d '\n'
 }
+
+######################################################################################
+
 #Required folders
 #The folder where steamcmd.sh is located
 STEAMDIR="$(getFromCfg STEAMDIR)"
@@ -30,7 +33,13 @@ MCRCON="$SCRIPTPATH/thirdparty/mcrcon"
 #The port where ark rcon service is listening
 MCRCONPORT="$(getFromArkCfg RCONPort)"
 
-###############################################################################
+######################################################################################
+
+function broadcastMSG(){
+    for PORT in $MCRCONPORT;do
+        "$MCRCON" -c -H 127.0.0.1 -P "$PORT" -p "$MCRCONPW" cmd1 "$1"
+    done
+}
 
 ######################################################################################
 
@@ -145,7 +154,6 @@ dorestart=0
 echo ""
 echo "Using command to update ARK..."
 echo "-------------------------------------------------------"
-echo ""
 arkupdate=$($STEAMDIR/steamcmd.sh +login $STEAMUSER $STEAMPW +force_install_dir $GAMEDIR +app_update 376030 +quit | tee /dev/tty)
 echo ""
 if [[ "$arkupdate" == *"Success! App '376030' already up to date."* ]]; then
@@ -159,32 +167,36 @@ else
 fi
         echo "ARK update check performed at: $(date)"
 
-activemodsIDs=/tmp/arkmods_enabled
-beforeUpdateIDs=/tmp/arkmods_old_ids
-beforeUpdate=/tmp/arkmods_old
-afterUpdate=/tmp/arkmods_new
 echo ""
 echo "Looking up current steam mod directory (pre-update)..."
 echo "-------------------------------------------------------"
-echo ""
-modcheckbefore=$(ls -l -t "$STEAMMODDIR" | tee $beforeUpdate)
-cat $beforeUpdate | grep -Eo "[0-9]{9}$" > $beforeUpdateIDs
+if [ ! -d "$STEAMMODDIR" ];then
+	echo "WARNING: created $STEAMMODDIR"
+	mkdir -p "$STEAMMODDIR"
+fi
+modcheckbefore=$(ls -l -t "$STEAMMODDIR")
+beforeUpdateIDs=$(echo "$modcheckbefore" | grep -Eo '[0-9]{9,10}')
+
 echo "State of steam mod dir:"
 echo "$modcheckbefore"
 echo ""
 echo "Looking up current GameUserConfig file..."
 echo "-------------------------------------------------------"
 echo ""
-activemods=$(dos2unix -q $BASECONFIG && cat $BASECONFIG | grep "ActiveMods=" | cut -d "=" -f 2 | sed 's/,$//' | xargs -d ',' -n1 echo | tee $activemodsIDs)
+activemods=""
+if [ -f "$BASECONFIG" ];then
+	activemods=$(dos2unix -q "$BASECONFIG" && cat "$BASECONFIG" | grep "^ActiveMods=" | cut -d "=" -f 2 | sed 's/,$//' | xargs -d ',' -n1 echo)
+else
+	echo "WARNING: $BASECONFIG does not exist"
+fi
 echo "Mods contained in list:"
 echo "$activemods"
 echo ""
 echo "Removing mods which were removed from config..."
 echo "-------------------------------------------------------"
-echo ""
-for installedID in $(cat $beforeUpdateIDs);do
-        if ! grep -xo $installedID $activemodsIDs &> /dev/null;then
-                echo "Mod $installedID was removed from config - Removing mod"
+for installedID in $beforeUpdateIDs;do
+        if ! echo "$activemods" | grep -xo "$installedID" &> /dev/null;then
+                echo "Mod '$installedID' was removed from config - Removing mod"
                 dorestart=1
                 if [ -f "$STEAMMODDIR/../../appworkshop_346110.acf" ];then
                         sed -i -n -E '1h;1!H;${;g;s/\"'"$installedID"'\"[^\{]*[^\}]*.{1}\s*//g;p;}' "$STEAMMODDIR/../../appworkshop_346110.acf"
@@ -197,17 +209,22 @@ for installedID in $(cat $beforeUpdateIDs);do
                 fi
         fi
 done
-modupdatelist=$(echo $activemods | xargs -n1 echo +workshop_download_item 346110)
+modupdatelist=""
+if [ ! -z "$activemods" ];then
+	for modid in $activemods;do
+		modupdatelist="$modupdatelist +workshop_download_item 346110 $modid"
+	done
+fi
 echo ""
 echo "Using command to update mods..."
 echo "-------------------------------------------------------"
 echo ""
-modupdates=$($STEAMDIR/steamcmd.sh +login $STEAMUSER $STEAMPW +force_install_dir $GAMEDIR $modupdatelist +quit | tee /dev/tty)
+modupdates=$("$STEAMDIR/steamcmd.sh" +login "$STEAMUSER" "$STEAMPW" +force_install_dir "$GAMEDIR" $modupdatelist +quit | tee /dev/tty)
 echo ""
 echo "Looking up current steam mod directory (post-update)..."
 echo "-------------------------------------------------------"
 echo ""
-modcheckafter=$(ls -l -t "$STEAMMODDIR" | tee $afterUpdate)
+modcheckafter=$(ls -l -t "$STEAMMODDIR")
 echo "State of steam mod dir:"
 echo "$modcheckafter"
 echo ""
@@ -218,7 +235,9 @@ echo ""
 if [[ "$modcheckbefore" != "$modcheckafter" ]]; then
         echo "Something changed - restart scheduled"
         dorestart=1
-        updated=$(grep -v -x -f $beforeUpdate $afterUpdate | grep -Eo "[0-9]{9}$")
+
+        updated=$(echo "$modcheckafter" | grep -v -x "$modcheckbefore" | grep -Eo "[0-9]{9,10}$")
+	echo "updated $updated"
         for updatedmod in $updated;do
                 if [ -d "$GAMEDIR/ShooterGame/Content/Mods/$updatedmod" ];then
                         echo ""
@@ -246,29 +265,29 @@ if (("$dorestart" > 0)); then
         echo "ARK was updated successfully"
         echo "ARK update performed at: $(date)\n"
         echo "Warning users about server restart"
-        $MCRCON -c -H 127.0.0.1 -P $MCRCONPORT -p $MCRCONPW cmd1 "broadcast New updates are installed now\nThe server is going to restart in 15min.\nThe world will be saved before restart\n"
+        broadcastMSG "broadcast New updates are installed now\nThe server is going to restart in 15min.\nThe world will be saved before restart\n"
         sleep 300
         echo "2nd warning"
-        $MCRCON -c -H 127.0.0.1 -P $MCRCONPORT -p $MCRCONPW cmd1 "broadcast 10min left until restart (Updates)\n"
+        broadcastMSG "broadcast 10min left until restart (Updates)\n"
         sleep 300
         echo "3th warning"
-        $MCRCON -c -H 127.0.0.1 -P $MCRCONPORT -p $MCRCONPW cmd1 "broadcast 5min left until restart (Updates)\n"
+        broadcastMSG "broadcast 5min left until restart (Updates)\n"
         sleep 180
         echo "4th Saving world warning - countdown"
-        $MCRCON -c -H 127.0.0.1 -P $MCRCONPORT -p $MCRCONPW cmd1 "broadcast 2min left until restart (Updates)\n1min left until the ark will be saved\nThe savegame is restored after the restart\n"
+        broadcastMSG "broadcast 2min left until restart (Updates)\n1min left until the ark will be saved\nThe savegame is restored after the restart\n"
         COUNTDOWNSAVE=59
         until [ $COUNTDOWNSAVE -eq -1 ]
         do
-                $MCRCON -c -H 127.0.0.1 -P $MCRCONPORT -p $MCRCONPW cmd1 "broadcast $COUNTDOWNSAVE seconds left until save\n$(($COUNTDOWNSAVE + 60)) seconds until restart.$MMHINT"
+                broadcastMSG "broadcast $COUNTDOWNSAVE seconds left until save\n$(($COUNTDOWNSAVE + 60)) seconds until restart.$MMHINT"
                 COUNTDOWNSAVE=$(($COUNTDOWNSAVE - 1))
                 sleep 1
         done
-        $MCRCON -c -H 127.0.0.1 -P $MCRCONPORT -p $MCRCONPW cmd1 "SaveWorld"
+        broadcastMSG "SaveWorld"
         echo "5th warning - countdown"
         COUNTDOWN=59
         until [ $COUNTDOWN -eq -1 ]
         do
-                $MCRCON -c -H 127.0.0.1 -P $MCRCONPORT -p $MCRCONPW cmd1 "broadcast Server restart in $COUNTDOWN seconds.$MMHINT"
+                broadcastMSG "broadcast Server restart in $COUNTDOWN seconds.$MMHINT"
                 COUNTDOWN=$(($COUNTDOWN - 1))
                 sleep 1
         done
