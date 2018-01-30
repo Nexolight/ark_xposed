@@ -292,7 +292,7 @@ if (("$dorestart" > 0)); then
                 sleep 1
         done
         echo "Kill server now. pls wait..."
-        killall -w -v  ShooterGameServer | tee /dev/tty
+        killall -w -v "$GAMEDIR/ShooterGame/Binaries/Linux/ShooterGameServer" | tee /dev/tty
         wait
         echo "Startup server again"
         $STARTUPSCRIPT &

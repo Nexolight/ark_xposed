@@ -9,8 +9,9 @@ I'm personally using it on my server.
 
 ## Content
 * xposed.cfg - Text; Shared config file.
-* ark_health.sh - bash; standalone; Restart server on fail.
+* ark_health.sh - bash; standalone; Restart server on fail (For single server setup).
 * ark_start.sh - bash; standalone; My personal startup script
+* ark_start_cluster.sh - bash; standalone; Just a wrapper for multiple start scripts (also includes ark_health.sh)
 * ark_statistics.sh - bash; standalone; Creates a json file with play-times
 * ark_chatlog.py - python; standalone; Provides a chatlog. This is primary part of the webchat for the xposed api.
 * ark_update.sh - bash; standalone; Update ARK and ARK mods

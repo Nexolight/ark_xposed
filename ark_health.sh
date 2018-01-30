@@ -1,12 +1,8 @@
 #!/bin/bash
 
-if ps -u steam | grep -q "ShooterGameServ";then
-	exit 0
-elif ps -u steam | grep -q "ark_update.sh";then
-	exit 0
-elif ps -u steam | grep -q "ark_start.sh";then
-	exit 0
-elif ps -u steam | grep -q "bash";then
+if pgrep -a ShooterGameSer;then
+	exit 0	
+elif pgrep -a ark_update;then
 	exit 0
 else
 	echo "ARK is down! force restart: $(date)"
