@@ -22,3 +22,9 @@ if ! pgrep -a ShooterGameSer | grep -Eo 'ShooterGameServer Scorched' &> /dev/nul
         sleep 120
 fi
 
+#if ! pgrep -a ShooterGameSer | grep -Eo 'ShooterGameServer TheIsland' &> /dev/null;then
+#       echo "$(date) - Starting The-Island"
+#        /home/ark/ark.theisland.sh &
+#        sleep 120
+#fi
+

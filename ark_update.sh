@@ -1,4 +1,6 @@
 #!/bin/bash
+PATH="$PATH:/usr/bin:/bin:/usr/share/bin:/user/local/bin"
+INSTANT="$1"
 SCRIPT=$(realpath $0)
 SCRIPTPATH=$(dirname $SCRIPT)
 function getFromCfg(){
@@ -31,7 +33,7 @@ STEAMPW=""
 #MCRCON - Download at https://sourceforge.net/projects/mcrcon/
 MCRCON="$SCRIPTPATH/thirdparty/mcrcon"
 #The port where ark rcon service is listening
-MCRCONPORT="$(getFromArkCfg RCONPort)"
+MCRCONPORT="32350 32340 32330"
 
 ######################################################################################
 
@@ -260,39 +262,57 @@ echo ""
 echo "ARK mods update check performed at: $(date)"
 echo "-------------------------------------------------------"
 echo ""
+
+if [ "$INSTANT" == "1" ]; then
+	dorestart=1
+fi
+
 if (("$dorestart" > 0)); then
         MCRCONPW="$(getFromArkCfg ServerAdminPassword)"
         echo "ARK was updated successfully"
         echo "ARK update performed at: $(date)\n"
         echo "Warning users about server restart"
-        broadcastMSG "broadcast New updates are installed now\nThe server is going to restart in 15min.\nThe world will be saved before restart\n"
-        sleep 300
-        echo "2nd warning"
-        broadcastMSG "broadcast 10min left until restart (Updates)\n"
-        sleep 300
-        echo "3th warning"
-        broadcastMSG "broadcast 5min left until restart (Updates)\n"
-        sleep 180
-        echo "4th Saving world warning - countdown"
-        broadcastMSG "broadcast 2min left until restart (Updates)\n1min left until the ark will be saved\nThe savegame is restored after the restart\n"
-        COUNTDOWNSAVE=59
-        until [ $COUNTDOWNSAVE -eq -1 ]
-        do
-                broadcastMSG "broadcast $COUNTDOWNSAVE seconds left until save\n$(($COUNTDOWNSAVE + 60)) seconds until restart.$MMHINT"
-                COUNTDOWNSAVE=$(($COUNTDOWNSAVE - 1))
-                sleep 1
-        done
-        broadcastMSG "SaveWorld"
-        echo "5th warning - countdown"
-        COUNTDOWN=59
-        until [ $COUNTDOWN -eq -1 ]
-        do
-                broadcastMSG "broadcast Server restart in $COUNTDOWN seconds.$MMHINT"
-                COUNTDOWN=$(($COUNTDOWN - 1))
-                sleep 1
-        done
-        echo "Kill server now. pls wait..."
-        killall -w -v "$GAMEDIR/ShooterGame/Binaries/Linux/ShooterGameServer" | tee /dev/tty
+        
+	if [ "$INSTANT" == "1" ]; then
+		echo "Insta update/restart"
+		broadcastMSG "broadcast Updates with insta-restart sheduled by admin in 10s\n"
+	else
+	
+		broadcastMSG "broadcast New updates are installed now\nThe server is going to restart in 15min.\nThe world will be saved before restart\n"
+      		sleep 300
+		echo "2nd warning"
+        	broadcastMSG "broadcast 10min left until restart (Updates)\n"
+        	sleep 300
+        	echo "3th warning"
+        	broadcastMSG "broadcast 5min left until restart (Updates)\n"
+        	sleep 180
+        	echo "4th Saving world warning - countdown"
+        	broadcastMSG "broadcast 2min left until restart (Updates)\n1min left until the ark will be saved\nThe savegame is restored after the restart\n"
+        	COUNTDOWNSAVE=59
+        	until [ $COUNTDOWNSAVE -eq -1 ]
+        	do
+                	broadcastMSG "broadcast $COUNTDOWNSAVE seconds left until save\n$(($COUNTDOWNSAVE + 60)) seconds until restart.$MMHINT"
+                	COUNTDOWNSAVE=$(($COUNTDOWNSAVE - 1))
+                	sleep 1
+        	done
+	fi
+	
+	sleep 10
+	broadcastMSG "SaveWorld"
+
+	if [ "$INSTANT" != "1" ]; then
+        	echo "5th warning - countdown"
+        	COUNTDOWN=59
+        	until [ $COUNTDOWN -eq -1 ]
+        	do
+                	broadcastMSG "broadcast Server restart in $COUNTDOWN seconds.$MMHINT"
+                	COUNTDOWN=$(($COUNTDOWN - 1))
+                	sleep 1
+        	done
+        	echo "Kill server now. pls wait..."
+	fi
+
+        killall -w -v "ShooterGameServer" | tee /dev/tty
         wait
         echo "Startup server again"
         $STARTUPSCRIPT &
