@@ -86,16 +86,17 @@ class StWorker(threading.Thread):
             os.mkdir(abspath)
 
     def fetchPlayerInfo(self):
-        fPI = threading.Thread(target=self.__fetchPlayerInfo)
-        self.queue.append({"job":fPI,"finished":False})
+        for port in cfgh.readCfg("RCON_PORTS").split(" "):
+            fPI = threading.Thread(target=self.__fetchPlayerInfo,args=(port,))
+            self.queue.append({"job":fPI,"finished":False})
 
-    def __fetchPlayerInfo(self):
+    def __fetchPlayerInfo(self,port):
         try:
             output = self.cmd.proc(
                 args=[
                     os.path.join(self.spath, "thirdparty/mcrcon"), "-c",
                     "-H", "127.0.0.1",
-                    "-P", cfgh.readGUSCfg("RCONPort"),
+                    "-P", port,
                     "-p", cfgh.readGUSCfg("ServerAdminPassword"),
                     "listplayers"
                 ]
