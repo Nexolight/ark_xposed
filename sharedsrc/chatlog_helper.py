@@ -54,7 +54,7 @@ class ChatlogHelper(object):
     def getChatlog(self):
         return self.chatlog
     
-    def sendAll(self, name, message, steamid=None):
+    def sendAll(self, name, message, steamid=None, port=None):
         '''
         TODO: pass steamname and ingame name
         
@@ -62,20 +62,33 @@ class ChatlogHelper(object):
         :param steamid: SteamID optional to indentify the player within the chatlog later.
         :param name: Name which will appear within the message
         :param message: Text.
+        :param port: Text/Number If not set the message will go to all ports
         '''
         rconcmd="ServerChat "
         if steamid:
             rconcmd+=steamid+"-"
         rconcmd+=name+":"+message
-        out=self.cmd.proc(
-            args=[
-                os.path.join(self.spath, "thirdparty/mcrcon"), "-c",
-                "-H", "127.0.0.1",
-                "-P", self.cfgh.readGUSCfg("RCONPort"),
-                "-p", self.cfgh.readGUSCfg("ServerAdminPassword"),
-                "ServerChat "+name+": "+message
-            ]
-        )
+        if(not port):
+            for port in self.cfgh.readCfg("RCON_PORTS").split(" "):
+                out=self.cmd.proc(
+                    args=[
+                        os.path.join(self.spath, "thirdparty/mcrcon"), "-c",
+                        "-H", "127.0.0.1",
+                        "-P", port,
+                        "-p", self.cfgh.readGUSCfg("ServerAdminPassword"),
+                        "ServerChat "+name+": "+message
+                    ]
+                )
+        else:
+            out=self.cmd.proc(
+                args=[
+                    os.path.join(self.spath, "thirdparty/mcrcon"), "-c",
+                    "-H", "127.0.0.1",
+                    "-P", str(port),
+                    "-p", self.cfgh.readGUSCfg("ServerAdminPassword"),
+                    "ServerChat "+name+": "+message
+                ]
+            )
         return out[1]; #Return errors
         
             

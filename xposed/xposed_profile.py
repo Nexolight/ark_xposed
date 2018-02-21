@@ -13,13 +13,18 @@ xposed_profile_bp = Blueprint("xposed_profile", __name__)
 @requires_role(["admin"])
 def getProfile():
     steamid=request.args.get("steamid")
+    map=request.args.get("map")
     if(not steamid):
         return Response("400 - Missing param",400)
     apd = ArkProfileDecoder()
     arkprofile=None
     try:
-        arkprofile = apd.decode_file(
-            os.path.join(cfgh.readCfg("ARKDIR"),"ShooterGame/Saved/SavedArks/"+steamid+".arkprofile"))
+        if(not map):
+            arkprofile = apd.decode_file(
+                os.path.join(cfgh.readCfg("ARKDIR"),"ShooterGame/Saved/SavedArks/"+steamid+".arkprofile"))
+        else:
+            arkprofile = apd.decode_file(
+                os.path.join(cfgh.readCfg("ARKDIR"),"ShooterGame/Saved/"+map+"/"+steamid+".arkprofile"))
     except Exception as e:
         l.error(e)
         return Response("500 - Can't read arkprofile:",500)

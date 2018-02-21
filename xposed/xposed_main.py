@@ -117,7 +117,7 @@ def hello_world():
                     <p>command=(read|send)</p>
                     <br>
                     <p>read [format=(html|json)] [lines=num] <i>limited</i></p>
-                    <p>send message=str</p>
+                    <p>send message=str [port=<rcon>]</p>
                 </span>
             </div>
         </div>

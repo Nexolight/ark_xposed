@@ -83,16 +83,17 @@ class CLWorker(threading.Thread):
             os.mkdir(os.path.dirname(abspath))
 
     def fetchChatlog(self):
-        fPI = threading.Thread(target=self.__fetchChatlog)
-        self.queue.append({"job":fPI,"finished":False})
+        for port in cfgh.readCfg("RCON_PORTS").split(" "):
+            fPI = threading.Thread(target=self.__fetchChatlog,args=(port,))
+            self.queue.append({"job":fPI,"finished":False})
 
-    def __fetchChatlog(self):
+    def __fetchChatlog(self,port):
         try:
             output = self.cmd.proc(
                 args=[
                     os.path.join(self.spath, "thirdparty/mcrcon"), "-c",
                     "-H", "127.0.0.1",
-                    "-P", cfgh.readGUSCfg("RCONPort"),
+                    "-P", port,
                     "-p", cfgh.readGUSCfg("ServerAdminPassword"),
                     "GetChat"
                 ]
@@ -106,7 +107,7 @@ class CLWorker(threading.Thread):
                 with open(filepath, "a+") as f:
                     for line in output[0].split("\n"):
                         if re.match("^.+\:.+$",line) and not re.match("^AdminCmd\:.*",line):
-                            f.write(str(round(time.time() * 1000))+":"+line+"\n")
+                            f.write(port+":"+str(round(time.time() * 1000))+":"+line+"\n")
                     f.close()
                 self.lock.release()
         finally:

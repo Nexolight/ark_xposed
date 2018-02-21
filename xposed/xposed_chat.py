@@ -47,14 +47,20 @@ def chat():
             return Response(response=out,status=200,mimetype="text/html")
     if command=="send":
         msg=request.args.get("message")
+        port=request.args.get("port")
         if not msg:
             return Response("400 - Missing param",400)
         playerprofile=pdbh.getActiveSvgByID(steamid=g.steamid)
         error=clgh.sendAll(
             name=pdbh.getSvgPlayerName(playerprofile),
             message=msg,
-            steamid=g.steamid
+            steamid=g.steamid,
+            port=port
         )
         if error:
             return Response("500 - Couldn't send message: "+error,500)
         return Response(response="ok",status=200,mimetype="text/html")
+    
+    
+    
+    
