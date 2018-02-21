@@ -108,7 +108,7 @@ class StWorker(threading.Thread):
                 #===================================================================
                 # Load all existing players
                 #===================================================================
-                self.folderhealth(os.path.basename(os.path.join(self.spath,cfgh.readCfg("STATS_PLAYERDB"))))
+                self.folderhealth(os.path.dirname(os.path.join(self.spath,cfgh.readCfg("STATS_PLAYERDB"))))
                 players=[]
                 self.lock.acquire()#Load all player objects
                 if os.path.exists(os.path.join(self.spath,cfgh.readCfg("STATS_PLAYERDB"))):
