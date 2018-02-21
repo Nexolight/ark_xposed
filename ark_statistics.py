@@ -189,11 +189,11 @@ class StWorker(threading.Thread):
             for root, dirs, files in os.walk(os.path.join(cfgh.readCfg("ARKDIR"),"ShooterGame/Saved/")):
                 if "Logs" in dirs:
                     dirs.remove("Logs")
-                if "Cluster" in dirs:
-                    dirs.remove("Cluster")
+                if "Clusters" in dirs:
+                    dirs.remove("Clusters")
                 for filename in files:
-                    if(filename is steamid+".arkprofile"):
-                        savepath=os.path.join(root,savefile)
+                    if(filename == steamid+".arkprofile"):
+                        savepath=os.path.join(root,filename)
                         savetime=os.path.getmtime(savepath)
                         if(savetime > lastsavetime):
                             lastsave=savepath
