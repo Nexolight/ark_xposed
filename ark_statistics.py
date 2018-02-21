@@ -184,14 +184,26 @@ class StWorker(threading.Thread):
             extractor=os.path.join(self.spath,"thirdparty/ark-tools-jar-with-dependencies.jar")
             outfolder=os.path.join(self.spath,cfgh.readCfg("STATS_PLAYERPROFILES"))
             self.l.debug(outfolder)
-            savegame=os.path.join(cfgh.readCfg("ARKDIR"),"ShooterGame/Saved/SavedArks/"+steamid+".arkprofile")
+            
+            lastsave=None
+            for root, dirs, files in os.walk(os.path.join(cfgh.readCfg("ARKDIR"),"ShooterGame/Saved/")):
+                for dirname in dirs:
+                    for saveroot, savedirs, savefiles in os.walk(os.path.join(root,dirname)):
+                        for savefile in savefiles:
+                            if(savefile is steamid+".arkprofile"):
+                                savepath=os.path.join(root,savefile)
+                                savetime=os.path.getmtime(savepath)
+                                if(savetime > lastsave):
+                                    lastsave=savepath
+                                    lastsave=savetime
+            #savegame=os.path.join(cfgh.readCfg("ARKDIR"),"ShooterGame/Saved/SavedArks/"+steamid+".arkprofile")
             self.lock.acquire()
             self.folderhealth(outfolder)
             self.lock.release()
             args=[
                 "java", "-jar", extractor,
                 "p2j",
-                savegame,
+                lastsave,
                 os.path.join(outfolder,steamid+".json")
             ]
             self.cmd.proc(args)
