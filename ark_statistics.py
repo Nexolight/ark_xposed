@@ -185,14 +185,19 @@ class StWorker(threading.Thread):
             outfolder=os.path.join(self.spath,cfgh.readCfg("STATS_PLAYERPROFILES"))
             self.l.debug(outfolder)
             lastsave=None
+            lastsavetime=0
             for root, dirs, files in os.walk(os.path.join(cfgh.readCfg("ARKDIR"),"ShooterGame/Saved/")):
+                if "Logs" in dirs:
+                    dirs.remove("Logs")
+                if "Cluster" in dirs:
+                    dirs.remove("Cluster")
                 for filename in files:
                     if(filename is steamid+".arkprofile"):
                         savepath=os.path.join(root,savefile)
                         savetime=os.path.getmtime(savepath)
-                        if(savetime > lastsave):
+                        if(savetime > lastsavetime):
                             lastsave=savepath
-                            lastsave=savetime
+                            lastsavetime=savetime
             #savegame=os.path.join(cfgh.readCfg("ARKDIR"),"ShooterGame/Saved/SavedArks/"+steamid+".arkprofile")
             self.lock.acquire()
             self.folderhealth(outfolder)
