@@ -159,10 +159,12 @@ class StWorker(threading.Thread):
                     if plr not in changedp:#This player logged out.
                         if plr.isonline:
                             plr.isonline=False
+                            changedp.append(plr)
                             self.l.info("Player: "+plr.name+" is now offile")
                             self.processPlayerProfile(plr.steamid)
                     elif not plr.isonline:#This player just logged in.
                         plr.isonline=True
+                        changedp.append(plr)
                         self.l.info("Player: "+plr.name+" is now online")
                         self.processPlayerProfile(plr.steamid)
             if len(changedp) > 0:#only on changes
@@ -183,7 +185,6 @@ class StWorker(threading.Thread):
             self.l.info("Extracting profile info from: "+steamid+".arkprofile")
             extractor=os.path.join(self.spath,"thirdparty/ark-tools-jar-with-dependencies.jar")
             outfolder=os.path.join(self.spath,cfgh.readCfg("STATS_PLAYERPROFILES"))
-            self.l.debug(outfolder)
             lastsave=None
             lastsavetime=0
             for root, dirs, files in os.walk(os.path.join(cfgh.readCfg("ARKDIR"),"ShooterGame/Saved/")):
