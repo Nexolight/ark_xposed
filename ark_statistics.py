@@ -117,12 +117,11 @@ class StWorker(threading.Thread):
                     file.close()
                 self.lock.release()
                 changedp=[]#Add all changed players
-                
+                now = int(time.time())
                 #Iterate over all online players
                 for line in output[0].split("\n"):
                     candidate = re.search("([0-9]+)\.\s+([^\s|^,]+)[^0-9]+([0-9]+)", line)
                     if candidate:#This was given by the command and represents "one" player
-                        now = int(time.time())
                         player = Player(
                             no=candidate.group(1),
                             name=candidate.group(2),
@@ -132,41 +131,39 @@ class StWorker(threading.Thread):
                             firstseen=now,
                             isonline=True,
                         )
-                        exists=False#We wan't to add them later when they don't exist
+                        idExists=False#We wan't to add them later when they don't exist
                         #Iterate over all stored players
                         for plr in players:
                             if plr.steamid == player.steamid:#We just do updates
-                                exists=True
+                                idExists=True
                                 plr.no=player.no#might change
                                 plr.name=player.name#might change
                                 #===================================================
                                 # Update the lastseen field
                                 #===================================================
                                 td = player.lastseen - plr.lastseen
-                                if td < int(cfgh.readCfg("STATS_INTERVALL")) + 5000:
-                                    plr.timeplayed += td
+                                plr.timeplayed += td
                                 plr.lastseen = player.lastseen
+                                if plr.isonline == False:
+                                    plr.isonline=True
+                                    self.l.info("Player: "+plr.name+" is now online")
+                                    self.processPlayerProfile(plr.steamid)
                                 changedp.append(plr)
                                 self.l.info("updated player "+str(plr.name))
                                 break;
-                                
-                        if not exists:#New player just add him/her
+                            
+                        if not idExists:#New player just add him/her
                             players.append(player)
                             changedp.append(player)
                             self.l.info("added new player \""+str(player.name)+"\" to db.")
-                            
-                for plr in players:
-                    if plr not in changedp:#This player logged out.
-                        if plr.isonline:
-                            plr.isonline=False
-                            changedp.append(plr)
-                            self.l.info("Player: "+plr.name+" is now offile")
-                            self.processPlayerProfile(plr.steamid)
-                    elif not plr.isonline:#This player just logged in.
-                        plr.isonline=True
+
+                for plr in players:#This player logged out.
+                    if plr.isonline == True and plr.lastseen +int(cfgh.readCfg("STATS_INTERVALL"))< now:
+                        plr.isonline = False
                         changedp.append(plr)
-                        self.l.info("Player: "+plr.name+" is now online")
+                        self.l.info("Player: "+plr.name+" is now offile")
                         self.processPlayerProfile(plr.steamid)
+
             if len(changedp) > 0:#only on changes
                 self.lock.acquire()
                 file = open(os.path.join(self.spath,cfgh.readCfg("STATS_PLAYERDB")), "w+")
