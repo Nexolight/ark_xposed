@@ -101,6 +101,7 @@ class StWorker(threading.Thread):
                     "listplayers"
                 ]
             )
+            changedp=[]#Add all changed players
             if output[1]:
                 self.l.warn("Fetching players failed!")
                 self.l.error(output[1])
@@ -116,7 +117,6 @@ class StWorker(threading.Thread):
                     players=json.load(file, cls=PlayerJSONDecoder)
                     file.close()
                 self.lock.release()
-                changedp=[]#Add all changed players
                 now = int(time.time())
                 #Iterate over all online players
                 for line in output[0].split("\n"):
