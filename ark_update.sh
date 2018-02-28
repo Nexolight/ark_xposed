@@ -8,7 +8,7 @@ function getFromCfg(){
 }
 function getFromArkCfg(){
 	FILE="$(getFromCfg ARKDIR)/ShooterGame/Saved/Config/LinuxServer/GameUserSettings.ini"
-	dos2unix $FILE &> /dev/null && cat $FILE | grep -Po "(?<=^$1\=)(.*)$" | tr -d '\n'
+	dos2unix $FILE &> /dev/null; cat $FILE | grep -Po "(?<=^$1\=)(.*)$" | tr -d '\n'
 }
 
 ######################################################################################
@@ -34,6 +34,7 @@ STEAMPW=""
 MCRCON="$SCRIPTPATH/thirdparty/mcrcon"
 #The port where ark rcon service is listening
 MCRCONPORT="32350 32340 32330"
+MCRCONPW="$(getFromArkCfg ServerAdminPassword)"
 
 ######################################################################################
 
@@ -268,7 +269,6 @@ if [ "$INSTANT" == "1" ]; then
 fi
 
 if (("$dorestart" > 0)); then
-        MCRCONPW="$(getFromArkCfg ServerAdminPassword)"
         echo "ARK was updated successfully"
         echo "ARK update performed at: $(date)\n"
         echo "Warning users about server restart"
@@ -320,7 +320,7 @@ if (("$dorestart" > 0)); then
 else
         echo "No updates required"
 fi
-echo ""
+echo " "
 echo "ARK update script finished at: $(date)"
 echo "-------------------------------------------------------"
-echo ""
+echo " "
