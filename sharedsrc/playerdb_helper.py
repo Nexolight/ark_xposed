@@ -235,5 +235,13 @@ class Player(object):
         if val == None:
             return default
         return val
-            
+    
+    @staticmethod
+    def getSteamID32(steamid64):
+        '''
+        Calculates the steamid32 from the steamid64 (default)
+        '''
+        sub = str(steamid64)[3:]
+        return str(int(sub)-61197960265728)
+        
     
