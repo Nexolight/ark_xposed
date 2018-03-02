@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 from sharedsrc.logger import CHATLOG_LOG
+from sharedsrc.adminbot import Adminbot
 import logging.config
 from lib2to3.pgen2.token import AT
 logging.config.dictConfig(CHATLOG_LOG)
@@ -59,6 +60,7 @@ class CLWorker(threading.Thread):
         self.cmd = CMD()
         self.l.info("Started command line helper")
         self.lock = threading.Lock()
+        self.adminbot = None
 
     def run(self):
         while not self.isStopped():
@@ -107,11 +109,22 @@ class CLWorker(threading.Thread):
                 with open(filepath, "a+") as f:
                     for line in output[0].split("\n"):
                         if re.match("^.+\:.+$",line) and not re.match("^AdminCmd\:.*",line):
+                            segments=line.split(":")
                             f.write(port+":"+str(round(time.time() * 1000))+":"+line+"\n")
+                            adminbot(port,segments[1],"".join(segments[3:]))
                     f.close()
                 self.lock.release()
         finally:
             self.__subthread_suicide()
+            
+    def adminbot(self,port,steamid,chatmsg):
+        if(int(cfgh.readCfg("CHATBOT_ENABLED")) == 1):
+            if(not self.adminbot):
+                self.lock.acquire(True)
+                self.adminbot=Adminbot()
+                self.lock.release()
+            fPI = threading.Thread(target=self.adminbot.react,args=(port,steamid,chatmsg,self.__subthread_suicide,))
+            self.queue.append({"job":fPI,"finished":False})
         
     def __subthread_suicide(self):
         self.lock.acquire(True)

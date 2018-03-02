@@ -35,6 +35,15 @@ _HANDLERS = {
         'maxBytes': 10485760,
         'backupCount': 3,
     },
+    'ark_adminbot_file': {
+        'class': 'logging.handlers.RotatingFileHandler',
+        'level': 'DEBUG',
+        'formatter': 'detailed',
+        'filename': os.path.join(spath,'logs/adminbot.log'),
+        'mode': 'a',
+        'maxBytes': 10485760,
+        'backupCount': 3,
+    },
     'ark_statistics_file': {
         'class': 'logging.handlers.RotatingFileHandler',
         'level': 'DEBUG',
@@ -83,6 +92,19 @@ STATISTICS_LOG={
 			'handlers':['ark_statistics_file','console']
 		}
 	}
+}
+
+ADMINBOT_LOG={
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': _HANDLERS,
+    'formatters':_FORMATERS,
+    'loggers': {
+        '': {
+            'level':'DEBUG',
+            'handlers':['ark_adminbot_file','console']
+        }
+    }
 }
 
 CHATLOG_LOG={
