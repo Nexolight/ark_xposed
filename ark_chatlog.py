@@ -111,13 +111,13 @@ class CLWorker(threading.Thread):
                 self.l.error(output[1])
             if output[0]:
                 filepath=os.path.join(self.spath,cfgh.readCfg("CHATLOG_DB"))
-                #self.lock.acquire(True)
+                self.lock.acquire(True)
                 for line in output[0].split("\n"):
                     chatlineObj = Chatline.create(port=port, line=line)
                     if(chatlineObj):
                         chatlineObj.write(filepath)
                         self.usebot(chatlineObj)
-                #self.lock.release()
+                self.lock.release()
         finally:
             self.__subthread_suicide()
             

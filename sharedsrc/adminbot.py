@@ -27,7 +27,7 @@ class Adminbot(object):
         '''
         try:
             command=self.parseAndGet(playerObj,chatlineObj)
-            self.l.info("Execute command: "+command)
+            self.l.info("Execute command: "+str(command))
             if(command):
                 output = self.cmd.proc(
                     args=[
@@ -60,8 +60,8 @@ class Adminbot(object):
         if(int(cfgh.readCfg("CHATBOT_FNC_HELP")) == 1):#help enabled
             if(cfgh.readCfg("CHATBOT_FNC_HELP_MSG") in chatlineObj.msg):#help command
                 self.l.info("Return help")
-                resp="ServerChatTo \""+playerObj.steamid+"\n"
-                resp+=self.getDesc("CHATBOT_FNC_HELP")
+                resp="ServerChatTo \""+playerObj.steamid+"\"\n"
+                resp+=self.getDesc("CHATBOT_FNC_HELP")+"\n"
                 if(int(cfgh.readCfg("CHATBOT_FNC_SUICIDE")) == 1):#suicide command
                     resp+=self.getDesc("CHATBOT_FNC_SUICIDE")
                 #TODO: more
