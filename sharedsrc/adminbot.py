@@ -27,6 +27,7 @@ class Adminbot(object):
         '''
         try:
             command=self.parseAndGet(playerObj,chatlineObj)
+            self.l.info("Execute command: "+command)
             if(command):
                 output = self.cmd.proc(
                     args=[
@@ -73,6 +74,8 @@ class Adminbot(object):
             
     def getPlayerID(self,steamid64,port):
         '''
+        WARNING: This is broken. The command returns the wrong number and every ingame command
+        using this value does only work from within the game even with the correct number
         returns the player id by calculating the steamid32 from the steamid64 and using the
         rcon command
         '''

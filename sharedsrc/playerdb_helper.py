@@ -241,7 +241,8 @@ class Player(object):
         '''
         Calculates the steamid32 from the steamid64 (default)
         '''
-        sub = str(steamid64)[3:]
-        return str(int(sub)-61197960265728)
-        
+        authserver = (int(steamid64) - 76561197960265728) & 1;
+        authid = (int(steamid64) - 76561197960265728 - authserver) / 2
+        #return "STEAM_0:"+str(authserver)+":"+str(authid)
+        return str(authid)
     
