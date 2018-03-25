@@ -139,10 +139,11 @@ class StWorker(threading.Thread):
                                 plr.no=player.no#might change
                                 plr.name=player.name#might change
                                 #===================================================
-                                # Update the lastseen field
+                                # Update the lastseen field and player status
                                 #===================================================
-                                td = player.lastseen - plr.lastseen
-                                plr.timeplayed += td
+                                if plr.isonline == True:# first set the player online and update lastseen once.
+                                    td = player.lastseen - plr.lastseen
+                                    plr.timeplayed += td
                                 plr.lastseen = player.lastseen
                                 if plr.isonline == False:
                                     plr.isonline=True
