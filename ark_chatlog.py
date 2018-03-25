@@ -9,10 +9,11 @@ import threading
 import multiprocessing
 import sys
 from sharedsrc.cmd_helper import CMD
-import re
 import os
 import time
 from sharedsrc.conf_helper import ConfHelper
+from sharedsrc.playerdb_helper import Player, PlayerDBHelper 
+from sharedsrc.chatline import Chatline
 cfgh = ConfHelper(update=True, autoupdate=True)
 
 class Chatlog(object):
@@ -61,6 +62,10 @@ class CLWorker(threading.Thread):
         self.l.info("Started command line helper")
         self.lock = threading.Lock()
         self.adminbot = None
+        self.pdbh = None
+        if(int(cfgh.readCfg("CHATBOT_ENABLED")) == 1):
+            self.adminbot=Adminbot(os.path.join(self.spath, "thirdparty/mcrcon"))
+            self.pdbh=PlayerDBHelper()
 
     def run(self):
         while not self.isStopped():
@@ -90,6 +95,7 @@ class CLWorker(threading.Thread):
             self.queue.append({"job":fPI,"finished":False})
 
     def __fetchChatlog(self,port):
+        self.l.debug("fetch chatlog")
         try:
             output = self.cmd.proc(
                 args=[
@@ -106,24 +112,25 @@ class CLWorker(threading.Thread):
             if output[0]:
                 filepath=os.path.join(self.spath,cfgh.readCfg("CHATLOG_DB"))
                 self.lock.acquire(True)
-                with open(filepath, "a+") as f:
-                    for line in output[0].split("\n"):
-                        if re.match("^.+\:.+$",line) and not re.match("^AdminCmd\:.*",line):
-                            segments=line.split(":")
-                            f.write(port+":"+str(round(time.time() * 1000))+":"+line+"\n")
-                            adminbot(port,segments[1],"".join(segments[3:]))
-                    f.close()
+                for line in output[0].split("\n"):
+                    chatlineObj = Chatline.create(port=port, line=line)
+                    if(chatlineObj):
+                        chatlineObj.write(filepath)
+                        self.usebot(chatlineObj)
                 self.lock.release()
         finally:
             self.__subthread_suicide()
             
-    def adminbot(self,port,steamid,chatmsg):
+    def usebot(self,chatlineObj):
         if(int(cfgh.readCfg("CHATBOT_ENABLED")) == 1):
-            if(not self.adminbot):
-                self.lock.acquire(True)
-                self.adminbot=Adminbot()
-                self.lock.release()
-            fPI = threading.Thread(target=self.adminbot.react,args=(port,steamid,chatmsg,self.__subthread_suicide,))
+            players = self.pdbh.getPlayersByName(chatlineObj.steamPlayer)
+            playerObj = None
+            if(players):
+                playerObj=players[0]#take the first matching
+            fPI = threading.Thread(target=self.adminbot.react,args=(
+                chatlineObj,
+                playerObj,
+                self.__subthread_suicide,))
             self.queue.append({"job":fPI,"finished":False})
         
     def __subthread_suicide(self):

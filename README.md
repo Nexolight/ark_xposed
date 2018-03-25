@@ -13,7 +13,7 @@ I'm personally using it on my server.
 * ark_start.sh - bash; standalone; My personal startup script
 * ark_start_cluster.sh - bash; standalone; Just a wrapper for multiple start scripts (also includes ark_health.sh)
 * ark_statistics.sh - bash; standalone; Creates a json file with play-times
-* ark_chatlog.py - python; standalone; Provides a chatlog. This is primary part of the webchat for the xposed api.
+* ark_chatlog.py - python; standalone; Provides a chatlog. This is primary part of the webchat for the xposed api. In order to use the CHATBOT options you need ark_statistics.py to collect player data.
 * ark_update.sh - bash; standalone; Update ARK and ARK mods
 * ark_xpose.py - python; standalone; Provide functions built on top of ark for access via web.
 * mcrcon - bundled; native; A tiny third party rcon client for linux x86 

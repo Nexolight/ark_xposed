@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
 from sharedsrc.logger import ADMINBOT_LOG
 import logging.config
 logging.config.dictConfig(ADMINBOT_LOG)
@@ -7,6 +5,8 @@ from sharedsrc.cmd_helper import CMD
 import re
 import os
 from sharedsrc.conf_helper import ConfHelper
+from sharedsrc.playerdb_helper import Player
+from sharedsrc.chatline import Chatline
 cfgh = ConfHelper(update=True, autoupdate=True)
 
 class Adminbot(object):
@@ -14,26 +14,28 @@ class Adminbot(object):
     Just the main class
     '''
 
-    def __init__(self):
+    def __init__(self,mcrconpath):
         self.l = logging.getLogger(self.__class__.__name__)
         self.l.info("Initialized ARK adminbot tool")
+        self.mcrconpath=mcrconpath
         self.cmd = CMD()
         
-    def react(self,port,steamid,chatmsg,callaback=None):
+    def react(self,chatlineObj,playerObj,callback=None):
         '''
         Parses a given chatmessage and reacts with an rcon command
         depending on the settings. Then it calls the callback function.
         '''
         try:
-            command=self.parseAndGet(steamid,chatmsg)
+            command=self.parseAndGet(playerObj,chatlineObj)
+            self.l.info("Execute command: "+str(command))
             if(command):
                 output = self.cmd.proc(
                     args=[
-                        os.path.join(self.spath, "thirdparty/mcrcon"), "-c",
+                        self.mcrconpath, "-c",
                         "-H", "127.0.0.1",
-                        "-P", port,
+                        "-P", chatlineObj.port,
                         "-p", cfgh.readGUSCfg("ServerAdminPassword"),
-                        
+                        command
                     ]
                 )
                 if output[1]:
@@ -42,25 +44,58 @@ class Adminbot(object):
                 if output[0]:
                     pass
         finally:
-            callback()
+            if(callback):
+                callback()
             
-    def parseAndGet(self,steamid,chatmsg):
+    def parseAndGet(self,playerObj,chatlineObj):
         '''
         Compares the given chatmsg with the settings
         and returns the appropriate rcon command
         '''
         callmsg=cfgh.readCfg("CHATBOT_CALL_MSG")
-        if(not callmsg in chatmsg):
+        if(not callmsg in chatlineObj.msg):
             return None
+        self.l.debug("process with adminbot:"+chatlineObj.msg)
         resp=""
         if(int(cfgh.readCfg("CHATBOT_FNC_HELP")) == 1):#help enabled
-            if(cfgh.readCfg("CHATBOT_FNC_MSG") in chatmsg):#help command
-                resp="ServerChatTo "+steamid+"\n"
-                resp+=getDesc("CHATBOT_FNC_HELP")
-                if(int(cfgh.readCfg("CHATBOT_FNC_UNSTUCK")) == 1):#unstuck command
-                    resp+=getDesc("CHATBOT_FNC_UNSTUCK")
-                #TODO:more to come
+            if(cfgh.readCfg("CHATBOT_FNC_HELP_MSG") in chatlineObj.msg):#help command
+                self.l.info("Return help")
+                resp="ServerChatTo \""+playerObj.steamid+"\"\n"
+                resp+=self.getDesc("CHATBOT_FNC_HELP")+"\n"
+                if(int(cfgh.readCfg("CHATBOT_FNC_SUICIDE")) == 1):#suicide command
+                    resp+=self.getDesc("CHATBOT_FNC_SUICIDE")
+                #TODO: more
                 return resp
+        if(int(cfgh.readCfg("CHATBOT_FNC_SUICIDE")) == 1):#suicide enabled
+            if(cfgh.readCfg("CHATBOT_FNC_SUICIDE_MSG") in chatlineObj.msg):
+                playerID=self.getPlayerID(playerObj.steamid,chatlineObj.port)
+                if(playerID):
+                    return "KillPlayer "+playerID
+            
+    def getPlayerID(self,steamid64,port):
+        '''
+        WARNING: This is broken. The command returns the wrong number and every ingame command
+        using this value does only work from within the game even with the correct number
+        returns the player id by calculating the steamid32 from the steamid64 and using the
+        rcon command
+        '''
+        steamid32 = Player.getSteamID32(steamid64)
+        output = self.cmd.proc(
+            args=[
+                self.mcrconpath, "-c",
+                "-H", "127.0.0.1",
+                "-P", port,
+                "-p", cfgh.readGUSCfg("ServerAdminPassword"),
+                "GetPlayerIDForSteamID "+steamid32
+            ]
+        )
+        if output[1]:
+            self.l.warn("Could not get steamid32 for "+steamid64+"!")
+            self.l.error(output[1])
+        if output[0]:
+            pidsearch = re.search('.*PlayerID\:\s*([0-9]+).*',output[0])
+            return str(pidsearch.group(1))
+        return None
             
     def getDesc(self,bCfgName):
             return cfgh.readCfg("CHATBOT_CALL_MSG")+" "+cfgh.readCfg(bCfgName+"_MSG")+" : "+cfgh.readCfg(bCfgName+"_DESC")+"\n"
