@@ -44,7 +44,7 @@ class PlayerDBHelper(object):
             with open(self.dbpath, "r") as f:
                 pdb=[]
                 for player in json.loads(f.read(),cls=PlayerJSONDecoder):
-                    player.savegames=self._readPlayerSavegames(player.steamid)
+                    #player.savegames=self._readPlayerSavegames(player.steamid) too heavy - read on request.
                     pdb.append(player)
                 if len(pdb) > 0:
                     self.playerdb = pdb
@@ -62,7 +62,7 @@ class PlayerDBHelper(object):
         '''
         Read the preprocessed savegames from arktools which may or may not be
         available depending on the individual setup
-        
+
         TODO: Implement multi savegames
         :param steamid:
         '''
@@ -129,7 +129,7 @@ class PlayerDBHelper(object):
         Returns the currently active savegame from the given player
         :param player:
         '''
-        return self.__getActiveSvg(player)
+        return self.getActiveSvgByID(player.steamid)
     
     def getActiveSvgByID(self, steamid):
         '''
@@ -137,11 +137,13 @@ class PlayerDBHelper(object):
         with the given steamid
         :param steamid:
         '''
-        player=self.getPlayerByID(steamid)
-        return self.__getActiveSvg(player)
+        ret = self._readPlayerSavegames(steamid)
+        if(len(ret)>0):
+            return ret[0]
         
     def __getActiveSvg(self, player):
         '''
+        DEPRECATED: Too ressource heavy to implement this way.
         TODO: implement multiple profiles
         :param player:
         '''

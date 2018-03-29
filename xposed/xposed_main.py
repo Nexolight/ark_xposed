@@ -81,6 +81,18 @@ def hello_world():
         <h3>API Manual - ARK Xposed</h3>
         <div class="entry">
             <span class="head" onclick="spoiler(this)">
+                /login
+            </span>
+            <div class="content">
+                <span>
+                    <p>Some functions require authentication and or playing on the server</p>
+                    <br>
+                    <p>command=login</p>
+                </span>
+            </div>
+        </div>
+        <div class="entry">
+            <span class="head" onclick="spoiler(this)">
                 /serverstats
             </span>
             <div class="content">

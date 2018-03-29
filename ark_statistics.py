@@ -165,7 +165,7 @@ class StWorker(threading.Thread):
                                 self.l.info("added new player \""+str(player.name)+"\" to db.")
     
                     for plr in players:#This player logged out.
-                        if plr.isonline == True and plr.lastseen +int(cfgh.readCfg("STATS_INTERVALL"))< now:
+                        if plr.isonline == True and plr.lastseen + (int(cfgh.readCfg("STATS_INTERVALL"))*2) < now:
                             plr.isonline = False
                             changedp.append(plr)
                             self.l.info("Player: "+plr.name+" is now offile")

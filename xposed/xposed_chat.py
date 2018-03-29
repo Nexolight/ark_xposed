@@ -40,7 +40,8 @@ def chat():
         elif format == "html":
             out = ""
             for message in clgh.getChatlog():
-                out += str(datetime.fromtimestamp(int(message.time/1000)))+":    "
+                out += "Port: "+str(message.server)+"    "
+                out += "Time: "+str(datetime.fromtimestamp(int(message.time/1000)))+":    "
                 out += message.steamname+"    "
                 out += "("+message.playername+"):    "
                 out += message.text+"<br>"

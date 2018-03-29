@@ -111,20 +111,21 @@ class ChatlogHelper(object):
             if output[1]:
                 self.l.error("Error during chatlog read: "+output[1])
             if output[0]:
-                for line in output[0].split("\n"):
-                    lifo=re.search("([0-9]+)\:(.+)\s\((.+)\)\:\s(.+)",line)
-                    lifo2=re.search("([0-9]+)\:(SERVER)\:\s*\'*(.+)\:(.*)",line)
+                for line in output[0].split("\n"):      
+                    lifo=re.search("([0-9]+)\:([0-9]+)\:(.+)\s\((.+)\)\:\s(.+)",line)
+                    lifo2=re.search("([0-9]+)\:([0-9]+)\:(SERVER)\:\s*\'*(.+)\:(.*)",line)
                     flifo=None
-                    if lifo and len(lifo.groups()) > 3:
+                    if lifo and len(lifo.groups()) > 4:
                         flifo=lifo
-                    elif lifo2 and len(lifo2.groups()) > 3:
+                    elif lifo2 and len(lifo2.groups()) > 4:
                         flifo=lifo2
                     if flifo:
                         message=Message(
-                            time=int(flifo.group(1)),
-                            steamname=flifo.group(2),
-                            playername=flifo.group(3),
-                            text=flifo.group(4)
+                            server=int(flifo.group(1)),
+                            time=int(flifo.group(2)),
+                            steamname=flifo.group(3),
+                            playername=flifo.group(4),
+                            text=flifo.group(5)
                         )
                         if initial:
                             self.chatlog.append(message)
@@ -150,6 +151,7 @@ class MessageJSONEncoder(JSONEncoder):
     def default(self, object):
         if isinstance(object, Message):
             obj = {
+                "server":object.server,
                 "steamname":object.steamname,
                 "playername":object.playername,
                 "time":object.time,
@@ -165,6 +167,7 @@ class MessageJSONDecoder(JSONDecoder):
         json.JSONDecoder.__init__(self, object_hook=self.decodeMessage, *args, **kwargs)
     def decodeMessage(self, object):
         res = Message(
+            server=object.get("server"),
             steamname=object.get("steamname"),
             playername=object.get("playername"),
             time=object.get("time"),
@@ -174,13 +177,15 @@ class MessageJSONDecoder(JSONDecoder):
         
 class Message(object):
     def __init__(self,
+        server=None,
         steamname=None,
         playername=None,
         time=None,
         text=None
     ):
+        self.server=Message.ifndef(server,0)
         self.steamname=Message.ifndef(steamname,"Unknown")
-        self.playername=Message.ifndef(playername,"unknown")
+        self.playername=Message.ifndef(playername,"Unknown")
         self.time=Message.ifndef(time,_time.time())
         self.text=Message.ifndef(text,"Lorem Ipsum")
         
