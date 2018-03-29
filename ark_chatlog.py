@@ -134,11 +134,9 @@ class CLWorker(threading.Thread):
             self.queue.append({"job":fPI,"finished":False})
         
     def __subthread_suicide(self):
-        self.lock.acquire(True)
         for aT in self.activeTasks:
             if aT.get("job")==threading.currentThread():
                 aT.update({"finished":True})
-        self.lock.release()
 
     def stop(self):
         '''
