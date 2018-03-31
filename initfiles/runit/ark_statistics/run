@@ -1,0 +1,3 @@
+#!/bin/sh
+exec chpst -u ark:ark -e /etc/sv/ark_statistics/env /home/ark/ark_xposed/ark_statistics.py
+

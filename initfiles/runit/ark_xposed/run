@@ -1,0 +1,2 @@
+#!/bin/sh
+exec chpst -u ark:ark -e /etc/sv/ark_xposed/env /bin/bash -c "cd /home/ark/ark_xposed; ./ark_xpose.py"
