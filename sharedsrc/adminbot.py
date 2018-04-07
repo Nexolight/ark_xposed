@@ -96,6 +96,8 @@ class Adminbot(object):
                     resp+=self.getDesc("CHATBOT_FNC_MKDAY")
                 if(int(cfgh.readCfg("CHATBOT_FNC_MKNIGHT")) == 1):#night command
                     resp+=self.getDesc("CHATBOT_FNC_MKNIGHT")
+                if(int(cfgh.readCfg("CHATBOT_FNC_SHUTDOWN")) == 1):#night command
+                    resp+=self.getDesc("CHATBOT_FNC_SHUTDOWN")
                 #TODO: more
                 return resp
         if(int(cfgh.readCfg("CHATBOT_FNC_SUICIDE")) == 1):#suicide enabled
@@ -111,8 +113,18 @@ class Adminbot(object):
         if(int(cfgh.readCfg("CHATBOT_FNC_MKNIGHT")) == 1):#suicide enabled
             if(cfgh.readCfg("CHATBOT_FNC_MKNIGHT_MSG") in chatlineObj.msg):
                 self.letsVote("CHATBOT_FNC_MKNIGHT",chatlineObj,"settimeofday 22:00:00")
+                
+        if(int(cfgh.readCfg("CHATBOT_FNC_SHUTDOWN")) == 1):#suicide enabled
+            if(cfgh.readCfg("CHATBOT_FNC_SHUTDOWN_MSG") in chatlineObj.msg):
+                self.letsVote("CHATBOT_FNC_SHUTDOWN",chatlineObj,[
+                    "ServerChat Saving world - Shutdown in 30s",
+                    "SaveWorld",
+                    30,
+                    "ServerChat world saved - exit now!",
+                    5,
+                    "DoExit"])
             
-    def __voteEnd(self,key,chatlineObj,onSuccess):
+    def __voteEnd(self,key,chatlineObj,onSuccess,delayAfterVote=0):
         purekey=key
         key=chatlineObj.port+"_"+key
         seconds = int(cfgh.readCfg(purekey+"_VOTETIME"))
@@ -130,12 +142,23 @@ class Adminbot(object):
         self.reactRaw("ServerChat Vote for "+cfgh.readCfg(purekey+"_MSG")+" ended. Agreement: "+str(vAgree)+"/"+str(minvotes)+"%",chatlineObj.port)
         
         if vAgree > minvotes:
-            self.reactRaw(onSuccess,chatlineObj.port)
+            
+            if delayAfterVote > 0:
+                time.sleep(delayAfterVote)
+                
+            if isinstance(onSuccess,list):
+                for cmd in onSuccess:
+                    if isinstance(cmd,int):
+                        time.sleep(cmd)
+                    else:
+                        self.reactRaw(cmd,chatlineObj.port)
+            else:
+                self.reactRaw(onSuccess,chatlineObj.port)
             
         self.votes.pop(key,None)
         self.l.info("Votetimer on server "+chatlineObj.port+" for "+cfgh.readCfg(purekey+"_MSG")+" ended.")
         
-    def letsVote(self,key,chatlineObj,onSuccess,endVote=False):
+    def letsVote(self,key,chatlineObj,onSuccess,delayAfterVote=0):
         self.l.info("Vote on server "+chatlineObj.port+" for "+cfgh.readCfg(key+"_MSG")+"started")
         now=time.time()
         purekey=key
@@ -158,7 +181,7 @@ class Adminbot(object):
             
             self.reactRaw(ret, chatlineObj.port)
             
-            vc = threading.Thread(target=self.__voteEnd,args=(purekey,chatlineObj,onSuccess))
+            vc = threading.Thread(target=self.__voteEnd,args=(purekey,chatlineObj,onSuccess,delayAfterVote))
             vc.daemon = True
             vc.start()
         
