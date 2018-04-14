@@ -24,7 +24,7 @@ STARTUPSCRIPT="$(getFromCfg STARTUP_SCRIPT)"
 GAMEDIR="$(getFromCfg ARKDIR)"
 #The full path to the GameUserSettings.ini
 BASECONFIG=$GAMEDIR/ShooterGame/Saved/Config/LinuxServer/GameUserSettings.ini
-MMHINT="\n\nIf you get a version missmatch after the restart then delete your local (outdated) mod version to force steam to redownload it. See ark420-the.center --> faq (right side)\nhttp://ark420-the.center/index.php/faq/"
+MMHINT="\n\nIf you get a version missmatch after the restart then delete your local (outdated) mod version to force steam to redownload it. See toxicdragonz.pro --> faq (right side)\nhttp://toxicdragonz.pro/index.php/faq/"
 #Steam user
 #No explination needed
 STEAMUSER="anonymous"
@@ -33,7 +33,7 @@ STEAMPW=""
 #MCRCON - Download at https://sourceforge.net/projects/mcrcon/
 MCRCON="$SCRIPTPATH/thirdparty/mcrcon"
 #The port where ark rcon service is listening
-MCRCONPORT="32350 32340 32330"
+MCRCONPORT="$(getFromCfg RCON_PORTS)"
 MCRCONPW="$(getFromArkCfg ServerAdminPassword)"
 
 ######################################################################################
@@ -279,22 +279,22 @@ if (("$dorestart" > 0)); then
 	else
 	
 		broadcastMSG "broadcast New updates are installed now\nThe server is going to restart in 15min.\nThe world will be saved before restart\n"
-      		sleep 300
+      	sleep 300
 		echo "2nd warning"
-        	broadcastMSG "broadcast 10min left until restart (Updates)\n"
-        	sleep 300
-        	echo "3th warning"
-        	broadcastMSG "broadcast 5min left until restart (Updates)\n"
-        	sleep 180
-        	echo "4th Saving world warning - countdown"
-        	broadcastMSG "broadcast 2min left until restart (Updates)\n1min left until the ark will be saved\nThe savegame is restored after the restart\n"
-        	COUNTDOWNSAVE=59
-        	until [ $COUNTDOWNSAVE -eq -1 ]
-        	do
-                	broadcastMSG "broadcast $COUNTDOWNSAVE seconds left until save\n$(($COUNTDOWNSAVE + 60)) seconds until restart.$MMHINT"
-                	COUNTDOWNSAVE=$(($COUNTDOWNSAVE - 1))
-                	sleep 1
-        	done
+    	broadcastMSG "broadcast 10min left until restart (Updates)\n"
+    	sleep 300
+    	echo "3th warning"
+    	broadcastMSG "broadcast 5min left until restart (Updates)\n"
+    	sleep 180
+    	echo "4th Saving world warning - countdown"
+    	broadcastMSG "broadcast 2min left until restart (Updates)\n1min left until the ark will be saved\nThe savegame is restored after the restart\n"
+    	COUNTDOWNSAVE=59
+    	until [ $COUNTDOWNSAVE -eq -1 ]
+    	do
+            	broadcastMSG "broadcast $COUNTDOWNSAVE seconds left until save\n$(($COUNTDOWNSAVE + 60)) seconds until restart.$MMHINT"
+            	COUNTDOWNSAVE=$(($COUNTDOWNSAVE - 1))
+            	sleep 1
+    	done
 	fi
 	
 	sleep 10
