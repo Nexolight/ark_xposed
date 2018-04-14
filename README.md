@@ -1,68 +1,101 @@
 # Warning
-This project is entirely WIP and in a relatively stale state. The master branch may break any time.
-Don't expect any tutorials, help with issues or convinience stuff unless it's finished.
+This is Work In Progress!
+It is here just in case you find it interesting and are willing to figure certain things out in case you want to use it as well.
 
-I'm personally using it on my server.
+This project is a result of my needs for my personal cluster.
+It started as a collection of scripts and was later merged to this project.
+Thus it is a little messy and not ready for a "release".
 
 # ark_xposed
 **A collection of tools to build extensions for ARK Survival Evolved**
 
 ## Content
-* xposed.cfg - Text; Shared config file.
-* ark_health.sh - bash; standalone; Restart server on fail (For single server setup).
-* ark_start.sh - bash; standalone; My personal startup script
-* ark_start_cluster.sh - bash; standalone; Just a wrapper for multiple start scripts (also includes ark_health.sh)
-* ark_statistics.sh - bash; standalone; Creates a json file with play-times
-* ark_chatlog.py - python; standalone; Provides a chatlog. This is primary part of the webchat for the xposed api. In order to use the CHATBOT options you need ark_statistics.py to collect player data.
-* ark_update.sh - bash; standalone; Update ARK and ARK mods
-* ark_xpose.py - python; standalone; Provide functions built on top of ark for access via web.
-* mcrcon - bundled; native; A tiny third party rcon client for linux x86 
+* `xposed.cfg` - Text; Shared config file.
+* `ark_health.sh` - bash; Restart server on fail (For single server setup).
+* `ark_start.sh` - bash; My personal startup script. Use it in combination with `ark_start_cluster.sh` and a `cronjob`.
+* `ark_start_cluster.sh` - bash; Just a wrapper for multiple start scripts. Use it with a `cronjob`
+* `ark_statistics.sh` - bash; Creates a json file with play-times. Additionally it will copy and convert player profiles on login/logout into json. Many things will not work that well without it.
+* `ark_chatlog.py` - python; Creates and updates a chatlog file which is used by `ark_xposed.py` and includes the botadmin. Botadmin functionalities can be enabled/disabled in `xposed.cfg` under `CHATBOT_*`.
+* `ark_update.sh` - bash; Update ARK and ARK mods
+* `ark_xpose.py` - python; Provides some functionalities via web (not much yet).
+* `mcrcon` - bundled; native; A tiny third party rcon client for linux x86 
+* `ark-tools` - bundled; jar; A program used to convert savegames into json.
+* `initfiles/runit/*` - shell; These are service files for `runit` - an init system like systemd (*caugh). 
 
 ### What is this / Why it exists?
-I started with my server and added the scripts over time in order to improve the unattended realiability and provide some stuff which other private ARK servers don't have. 
+This is a meanwhile merged scriptcollection to provide some advanced functions in ARK.
+The main idea is to do it via RCON - as long as possible. 
+It includes an API accessible from the web
+which is intendet for stuff like web/ark crosschat, multiuser management, downloads, serverstatus, statistics etc.
+Beside this it contains an update script for ARK as well as the used mods.
+Furthermore there's a easily extendable botadmin which may help players with voted events 
+(restart, daytime, whatever you have in mind...), rewards, etc. 
 
-Due to that I added a webapi which allows to get some information into any other application.
-The API accesses primary data collected by the standalone programs. And one day may also bring some interactive functionalities.
+The files are all stored in a non binary format. If you whish you may make use of them.
 
+---
+
+There are many other Programs that do such stuff out there. There is no specific reason to use this.
+I use it for myself as I prefer to have some control over it. 
+I don't want to rely on others too much if something breaks.
 
 ## Setup
-When using the following setup the stuff provided here should work out of the box.
-Please change xposed.cfg according to your needs...
 
-* If you just want to use the upgrade script you can delete everything but ark_update.sh, xposed.cfg, and ark_start.sh (or a replacement). The upgrade script itself only uses STEAMDIR, ARKDIR and STARTUP_SCRIPT from the config.
+If you want to start fast without possible quirks, then the best advice
+is to use the same setup as I do.
 
+#### Cluster/Server Environment
+I use all instances under the same user `ark` (`/home/ark`).
+The different instances are started by a dedicated startup script for each.
+Namely `ark_start.sh` as copy, edited and used with `ark_start_cluster.sh` via cronjob.
+It is important to set the correct ports inside `xposed.cfg` as they will be used
+for any rcon command.
+
+The toolset respects the origin/destination for specific tasks. Don't worry.
+
+When you use the structure described next you don't need to worry too much
+about the other config options as well.
+
+---
+
+#### Folder for this toolset:
+`/home/ark/ark_xposed` (git clone)
+
+---
 
 #### Steam installation
-/home/steam/steamcmd/
+Referred in `xposed.cfg` as `STEAMDIR`
+
+Use: `/home/ark/steamcmd/`
 _(Assuming the Steam structure keeps the same)_
 
 ---
 
-#### Folder for all the scripts
-/home/steam/steamcmd/scripts (the git repo)
-
----
-
 #### ARK installation:
-/home/steam/steamcmd/steamapps/common/ARK
+Referred in `xposed.cfg` as `ARKDIR`
+
+Use: `/home/ark/steamcmd/steamapps/common/ARK`
 _(Assuming the Game structure keeps the same)_
 
 ---
 
-#### Homepage
+#### WEB API (ark_xposed)
+**Use nginx/apache as proxy!**
 The point of this is to use this API via ajax requests.
 I might provide some snipptes but the setup is up to you.
-The API binds to port 6001 per default.
+The API binds to port 6003 per default.
+You will find the parameters and options via webbrowser at this port.
 
 ---
 
 #### Dependencies
 * common linux tools
 * mcrcon (bundled)
+* ark server tools (bundled)
 * dos2unix
 * gettext
 * perl
 * python3
 * python3 chardet (pip3)
-* Python3 flask, flask-openid, flask-cors, py4j (pip3)
+* Python3 flask, flask-openid, flask-cors, flask-session (pip3)
 * Java 8

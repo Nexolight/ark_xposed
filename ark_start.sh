@@ -1,16 +1,34 @@
 #!/bin/bash
-SESSION="Server name placeholder"
-MESSAGE="Server message placeholder"
+
+# Choose your map
+# Valid maps: 
+# "TheIsland","TheCenter","ScorchedEarth_P","Ragnarok","Aberration_P"
+SMAP="Ragnarok"
+
+# ! Edit this !
+SESSION="Server Name"
+MESSAGE="Welcome to our cluster!"
 ADMINPW="changeme"
+CLUSTERNAME="MyCluster"
+
+# Ports used by your server
+# Don't make them continuous for multiple servers. I use a +10 gap for each other server.
 PORT=7777
 QUERYPORT=27015
 RCONPORT=32330
-MPLAYERS=160
 
-/home/steam/steamcmd/steamapps/common/ARK/ShooterGame/Binaries/Linux/ShooterGameServer \
-"TheCenter\
+# Max players
+MPLAYERS=70
+
+
+# The path to the ShooterGameServer executable
+SGAMESRV="/home/ark/steamcmd/steamapps/common/ARK/ShooterGame/Binaries/Linux/ShooterGameServer" 
+
+$SGAMESRV \
+"$SMAP\
 ?listen\
 ?SessionName=$SESSION\
+?bRawSockets\
 ?Port=$PORT\
 ?QueryPort=$QUERYPORT\
 ?RCONEnabled=True\
@@ -18,12 +36,15 @@ MPLAYERS=160
 ?ServerAdminPassword=$ADMINPW\
 ?MaxPlayers=$MPLAYERS\
 ?Message=$MESSAGE\
-?AllowAnyoneBabyImprintCuddle=true" \
+?AllowAnyoneBabyImprintCuddle=true\
+?ShowFloatingDamageText=true\
+?AltSaveDirectoryName=$SMAP" \
+-clusterid="$CLUSTERNAME" \
+-NoTransferFromFiltering \
 -server \
--USEALLAVAILABLECORES \
 -UseBattlEye \
 -vday \
 -webalarm \
 -nosteamclient &
 
-echo "Server should be available in approximately 10 minutes"
+echo "$SESSION is starting!"
