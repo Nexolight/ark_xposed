@@ -64,8 +64,9 @@ class CLWorker(threading.Thread):
         self.adminbot = None
         self.pdbh = None
         if(int(cfgh.readCfg("CHATBOT_ENABLED")) == 1):
-            self.adminbot=Adminbot(os.path.join(self.spath, "thirdparty/mcrcon"))
             self.pdbh=PlayerDBHelper()
+            self.adminbot=Adminbot(os.path.join(self.spath, "thirdparty/mcrcon"),self.pdbh)
+            
 
     def run(self):
         while not self.isStopped():

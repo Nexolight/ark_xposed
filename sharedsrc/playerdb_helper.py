@@ -58,6 +58,21 @@ class PlayerDBHelper(object):
             self.dbpath = os.path.join(os.path.dirname(sys.argv[0]), self.cfgh.readCfg("STATS_PLAYERDB"))
             self.updatePlayerDB()
             
+    def getSvgPlayerID(self,steamid):
+        '''
+        Read the ingame PlayerID from the extracted profiles since the rcon commands
+        return a wrong value.
+        '''
+        savegames = self._readPlayerSavegames(steamid)
+        if(len(savegames) > 0):
+            savegame = savegames[0]
+            return self._getSvgProperty(
+                props=self._getSvgPrimalPlayerData(savegame),
+                prop="PlayerDataID",
+                type="UInt64Property",
+            )
+        return 0
+            
     def _readPlayerSavegames(self, steamid):
         '''
         Read the preprocessed savegames from arktools which may or may not be

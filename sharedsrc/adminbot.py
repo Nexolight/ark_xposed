@@ -5,6 +5,9 @@ from sharedsrc.cmd_helper import CMD
 import re
 import threading
 import os
+import random
+import json
+from urllib.request import urlopen, Request
 from sharedsrc.conf_helper import ConfHelper
 from sharedsrc.playerdb_helper import Player
 from sharedsrc.chatline import Chatline
@@ -37,12 +40,21 @@ class Adminbot(object):
     Just the main class
     '''
 
-    def __init__(self,mcrconpath):
+    def __init__(self,mcrconpath,pdbh):
         self.l = logging.getLogger(self.__class__.__name__)
         self.l.info("Initialized ARK adminbot tool")
         self.mcrconpath=mcrconpath
         self.cmd = CMD()
         self.votes = {}
+        self.pdbh = pdbh
+        self.webheader = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+            'Accept-Encoding': 'none',
+            'Accept-Language': 'en-US,en;q=0.8',
+            'Connection': 'keep-alive'
+        }
         
         
     def reactRaw(self, command, port):
@@ -91,30 +103,32 @@ class Adminbot(object):
                 resp="ServerChatTo \""+playerObj.steamid+"\"\n"
                 resp+=self.getDesc("CHATBOT_FNC_HELP")+"\n"
                 if(int(cfgh.readCfg("CHATBOT_FNC_SUICIDE")) == 1):#suicide command
-                    resp+=self.getDesc("CHATBOT_FNC_SUICIDE")+"\n"
+                    resp+=self.getDesc("CHATBOT_FNC_SUICIDE")
                 if(int(cfgh.readCfg("CHATBOT_FNC_MKDAY")) == 1):#day command
                     resp+=self.getDesc("CHATBOT_FNC_MKDAY")
                 if(int(cfgh.readCfg("CHATBOT_FNC_MKNIGHT")) == 1):#night command
                     resp+=self.getDesc("CHATBOT_FNC_MKNIGHT")
-                if(int(cfgh.readCfg("CHATBOT_FNC_SHUTDOWN")) == 1):#night command
+                if(int(cfgh.readCfg("CHATBOT_FNC_SHUTDOWN")) == 1):#shutdown command
                     resp+=self.getDesc("CHATBOT_FNC_SHUTDOWN")
+                if(int(cfgh.readCfg("CHATBOT_FNC_ARKSERVERSNET_VOTE")) == 1):#arkservesnet vote claim command
+                    resp+=self.getDesc("CHATBOT_FNC_ARKSERVERSNET_VOTE")
                 #TODO: more
                 return resp
         if(int(cfgh.readCfg("CHATBOT_FNC_SUICIDE")) == 1):#suicide enabled
             if(cfgh.readCfg("CHATBOT_FNC_SUICIDE_MSG") in chatlineObj.msg):
-                playerID=self.getPlayerID(playerObj.steamid,chatlineObj.port)
+                playerID=str(self.pdbh.getSvgPlayerID(playerObj.steamid))
                 if(playerID):
-                    return "KillPlayer "+playerID
+                    return "KillPlayer \""+playerID+"\""
                 
-        if(int(cfgh.readCfg("CHATBOT_FNC_MKDAY")) == 1):#suicide enabled
+        if(int(cfgh.readCfg("CHATBOT_FNC_MKDAY")) == 1):#day enabled
             if(cfgh.readCfg("CHATBOT_FNC_MKDAY_MSG") in chatlineObj.msg):
                 self.letsVote("CHATBOT_FNC_MKDAY",chatlineObj,"settimeofday 08:00:00")
                 
-        if(int(cfgh.readCfg("CHATBOT_FNC_MKNIGHT")) == 1):#suicide enabled
+        if(int(cfgh.readCfg("CHATBOT_FNC_MKNIGHT")) == 1):#night enabled
             if(cfgh.readCfg("CHATBOT_FNC_MKNIGHT_MSG") in chatlineObj.msg):
                 self.letsVote("CHATBOT_FNC_MKNIGHT",chatlineObj,"settimeofday 22:00:00")
                 
-        if(int(cfgh.readCfg("CHATBOT_FNC_SHUTDOWN")) == 1):#suicide enabled
+        if(int(cfgh.readCfg("CHATBOT_FNC_SHUTDOWN")) == 1):#shutdown enabled
             if(cfgh.readCfg("CHATBOT_FNC_SHUTDOWN_MSG") in chatlineObj.msg):
                 self.letsVote("CHATBOT_FNC_SHUTDOWN",chatlineObj,[
                     "ServerChat Saving world - Shutdown in 30s",
@@ -123,7 +137,75 @@ class Adminbot(object):
                     "ServerChat world saved - exit now!",
                     5,
                     "DoExit"])
+                
+        if(int(cfgh.readCfg("CHATBOT_FNC_ARKSERVERSNET_VOTE")) == 1):#night enabled
+            if(cfgh.readCfg("CHATBOT_FNC_ARKSERVERSNET_VOTE_MSG") in chatlineObj.msg):
+                self.claimASNVote(chatlineObj,playerObj)
             
+    def claimASNVote(self,chatlineObj,playerObj):
+        apikeys = json.loads(cfgh.readCfg("CHATBOT_FNC_ARKSERVERSNET_VOTE_SRVKEYS"))
+        playerID=self.pdbh.getSvgPlayerID(playerObj.steamid)
+        reward = json.loads(cfgh.readCfg("CHATBOT_FNC_ARKSERVERSNET_VOTE_REWARD"))
+        rng = int(cfgh.readCfg("CHATBOT_FNC_ARKSERVERSNET_VOTE_RNG"))
+        rngItems = int(cfgh.readCfg("CHATBOT_FNC_ARKSERVERSNET_VOTE_RNG_ITEMS"))
+        apiurl = cfgh.readCfg("CHATBOT_FNC_ARKSERVERSNET_VOTE_APIURL")
+        once=True
+        for apikey in apikeys:
+            
+            url = apiurl
+            url += "object=votes&element=claim"
+            url += "&key="+str(apikey)
+            url += "&steamid="+str(playerObj.steamid)
+            
+            #check unclaimed vote            
+            rq = Request(url,headers=self.webheader)
+            voted = urlopen(rq).read()
+            if once:
+                voted = "1"
+                once=False
+            
+            urlACK = apiurl
+            urlACK += "action=post&object=votes&element=claim"
+            urlACK += "&key="+str(apikey)
+            urlACK += "&steamid="+str(playerObj.steamid)
+            
+            
+            if len(voted) == 1 and int(voted) == 1:
+                try:
+                    self.reactRaw("ServerChatTo \""+str(playerObj.steamid)+"\" Granting reward for Server with API key: "+str(apikey),chatlineObj.port)
+                    finalReward = []
+                    if(rng > 0): #pick a random reward
+                        for x in range(rngItems): #pick x random rewards
+                            randomReward = random.choice(reward)
+                            for repeat in range(int(item.get("repeat"))):#item amounts are capped - repeat n times
+                                finalReward.append(
+                                    str("\""+randomReward.get("item"))+"\" "+
+                                    str(randomReward.get("amount"))+" "+
+                                    str(randomReward.get("quality"))+" "+
+                                    str(randomReward.get("fBP"))
+                                )
+                    else:
+                        for item in reward: #pick all rewards
+                            for repeat in range(int(item.get("repeat"))):#item amounts are capped - repeat n times
+                                finalReward.append(
+                                    str("\""+item.get("item"))+"\" "+
+                                    str(item.get("amount"))+" "+
+                                    str(item.get("quality"))+" "+
+                                    str(item.get("fBP"))
+                                )
+                            
+                    for grantItem in finalReward: #execute reward commands
+                        self.reactRaw("GiveItemToPlayer "+str(playerID)+" "+grantItem,chatlineObj.port)
+                    
+                    #claim vote for the next 24h
+                    rq = Request(urlACK,headers=self.webheader)
+                    urlopen(rq)
+                except Exception as e:
+                    self.l.error(str(e))
+                    self.reactRaw("ServerChatTo \""+str(playerObj.steamid)+"\" whoops - something went wrong.",chatlineObj.port)
+            else:
+                self.reactRaw("ServerChatTo \""+str(playerObj.steamid)+"\" Nothing to claim for Server with API key: "+str(apikey),chatlineObj.port)
+                
     def __voteEnd(self,key,chatlineObj,onSuccess,delayAfterVote=0):
         purekey=key
         key=chatlineObj.port+"_"+key
@@ -141,7 +223,7 @@ class Adminbot(object):
         
         self.reactRaw("ServerChat Vote for "+cfgh.readCfg(purekey+"_MSG")+" ended. Agreement: "+str(vAgree)+"/"+str(minvotes)+"%",chatlineObj.port)
         
-        if vAgree > minvotes:
+        if vAgree >= minvotes:
             
             if delayAfterVote > 0:
                 time.sleep(delayAfterVote)
@@ -223,9 +305,10 @@ class Adminbot(object):
             return 0
         ppV = 100/(vYes+vNo)
         return int(ppV*vYes)
-            
+    
     def getPlayerID(self,steamid64,port):
         '''
+        DEPRECATED
         WARNING: This is broken. The command returns the wrong number and every ingame command
         using this value does only work from within the game even with the correct number
         returns the player id by calculating the steamid32 from the steamid64 and using the
@@ -250,7 +333,7 @@ class Adminbot(object):
         return None
             
     def getDesc(self,bCfgName):
-            return cfgh.readCfg("CHATBOT_CALL_MSG")+" "+cfgh.readCfg(bCfgName+"_MSG")+" : "+cfgh.readCfg(bCfgName+"_DESC")+"\n"
+            return cfgh.readCfg("CHATBOT_CALL_MSG")+" "+cfgh.readCfg(bCfgName+"_MSG")+" - "+cfgh.readCfg(bCfgName+"_DESC")+"\n"
             
             
             
