@@ -136,7 +136,7 @@ class Adminbot(object):
                     30,
                     "ServerChat world saved - exit now!",
                     5,
-                    "DoExit"])
+                    "_KILLSERVER"])
                 
         if(int(cfgh.readCfg("CHATBOT_FNC_ARKSERVERSNET_VOTE")) == 1):#night enabled
             if(cfgh.readCfg("CHATBOT_FNC_ARKSERVERSNET_VOTE_MSG") in chatlineObj.msg):
@@ -232,6 +232,8 @@ class Adminbot(object):
                 for cmd in onSuccess:
                     if isinstance(cmd,int):
                         time.sleep(cmd)
+                    elif str(cmd) == "_KILLSERVER":
+                        self.cmd.killserver(chatlineObj.port)
                     else:
                         self.reactRaw(cmd,chatlineObj.port)
             else:
@@ -241,6 +243,22 @@ class Adminbot(object):
         self.l.info("Votetimer on server "+chatlineObj.port+" for "+cfgh.readCfg(purekey+"_MSG")+" ended.")
         
     def letsVote(self,key,chatlineObj,onSuccess,delayAfterVote=0):
+        '''
+        Start a vote for the specied command.
+        The command (key) must have a _MSG _MINVOTE and _VOTETIME
+        setting in the config file.
+        
+        chatlineObj is required
+        for ports and the specific vote. 
+        
+        onSuccess is an array with either
+        strings (commands to execute) or integers (delays).
+        special internal commands are:
+        _KILLSERVER - shuts the server down
+        
+        delayAfterVote is the time waited before the onSuccess chain
+        is executed.
+        '''
         self.l.info("Vote on server "+chatlineObj.port+" for "+cfgh.readCfg(key+"_MSG")+"started")
         now=time.time()
         purekey=key
@@ -287,7 +305,6 @@ class Adminbot(object):
         ret+="ServerChat "+cfgh.readCfg(purekey+"_MSG")
         ret+=" "+str(vAgree)+"/"+cfgh.readCfg(purekey+"_MINVOTE")+"%"
         self.reactRaw(ret, chatlineObj.port)
-    
         
     def _voteP(self,votes):
         '''

@@ -1,9 +1,36 @@
 import subprocess
 import os
 import logging
+import psutil
+import signal
 class CMD(object):
     def __init__(self):
         self.l = logging.getLogger(__name__+"."+self.__class__.__name__)
+
+    def getServerProcess(self,port):
+        '''
+        Returns the process of the ShooterGameServer
+        which listens on the given port
+        '''
+        for proc in psutil.process_iter():
+            pinfo = proc.as_dict(attrs=['pid', 'name'])
+            if pinfo.get("name") != "ShooterGameServer":
+                    continue
+    
+            for connection in proc.connections():
+                    if connection.status == psutil.CONN_LISTEN and connection.laddr.port == int(port):
+                            return proc
+
+    def killserver(self, port):
+        '''
+        Kills the server instance
+        that listens on the given port.
+        '''
+        proc = self.getServerProcess(port)
+        if not proc:
+            self.l.warn("Could not find the server process for port "+str(port))
+            return
+        proc.send_signal(signal.SIGTERM)
 
     def proc(self, args, env=None, proctimeout=5, cwd=None, encoding=None):
         '''

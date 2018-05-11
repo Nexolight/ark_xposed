@@ -28,7 +28,7 @@ _HANDLERS = {
     },
     'ark_chatlog_file': {
         'class': 'logging.handlers.RotatingFileHandler',
-        'level': 'DEBUG',
+        'level': 'INFO',
         'formatter': 'detailed',
         'filename': os.path.join(spath,'logs/chatlog.log'),
         'mode': 'a',
