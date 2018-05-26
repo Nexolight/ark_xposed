@@ -6,18 +6,18 @@
 <div id="playersonline" style="min-height: 0px;">
 <h3>Online:</h3>
 <div id="playersonline_list"></div>
-</div><br>
-
+</div>
+&nbsp;
 <div id="playeroffline" style="min-height: 0px;">
 <h3>Offline:</h3>
 <div id="playersoffline_list" style="color: red;"></div>
-</div><br>
-
+</div>
+&nbsp;
 <div id="playersgone" style="min-height: 0px;">
-<h3>Inactive (7 days):</h3>
+<h3>Inactive (28 days):</h3>
 <div id="playersgone_list" style="color: gray;"></div>
-</div><br>
-
+</div>
+&nbsp;
 <div id="playeronserver" style="min-height: 500px;"></div>
 </div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
@@ -47,6 +47,15 @@
 			mkChart(jsondata);
 		}
 	})
+var proto = "http";
+var port = "6001";
+if(location.protocol != 'https:'){
+ proto="http";
+ port="6001"
+ }else{
+ proto="https"
+ port="6002"
+}
 	function startFlow(){
 		var container = $("#playercharts");
 		var err_cantparse = $("#err_cantparse")
@@ -54,7 +63,7 @@
 		function updateme(){
 			$.ajax({
 			type: "GET",
-			url: "http://ark420-the.center:6001/serverstats?scope=all",
+			url: proto+"://tortuga.coldbyte.net:"+port+"/serverstats?scope=all",
 			async: true,
 			cache: false,
 			success: function(data){
@@ -78,7 +87,7 @@
 				}
 				setTimeout(function(){
 					updateme();
-				},1000)
+				},10000)
 			},
 			error: function(data){
 				if(!$(err_nocon).is(":visible")){
@@ -138,11 +147,22 @@
 			playername=this.name;
 			playerprofile=getSteamProfile(this.steamid);
 			playerid=this.steamid;
-			lastseen=this.lastseen;
 			now = new Date().getTime() / 1000;
-			if(now-lastseen < 126){
+			if(this.isonline){
 				putPlayerToList(playername,playerprofile,playerid,$(playersonline_list),"green");
-			}else if(now-lastseen < 604800){ putPlayerToList(playername,playerprofile,playerid,$(playersoffline_list),"#b2533e"); }else{ putPlayerToList(playername,playerprofile,playerid,$(playersgone_list),"#9b9b9b"); } }) } function putPlayerToList(name,profile,id,destList,color){ var strid = "#"+String(id); if($(destList).find(strid).length == 0){ var fonline = $(playersonline_list).find(strid); var foffline = $(playersoffline_list).find(strid); var fgone = $(playersgone_list).find(strid); if($(fonline).length > 0){
+			}else if(!this.isonline && now-2419200 <= this.lastseen){ 
+				putPlayerToList(playername,playerprofile,playerid,$(playersoffline_list),"#b2533e"); 
+			}else{ 
+				putPlayerToList(playername,playerprofile,playerid,$(playersgone_list),"#9b9b9b"); 
+			} 
+		}) 
+	} function putPlayerToList(name,profile,id,destList,color){ 
+		var strid = "#"+String(id); 
+		if($(destList).find(strid).length == 0){
+			var fonline = $(playersonline_list).find(strid); 
+			var foffline = $(playersoffline_list).find(strid); 
+			var fgone = $(playersgone_list).find(strid); 
+			if($(fonline).length > 0){
 				$(fonline).remove();
 			}else if($(foffline).length > 0){
 				$(foffline).remove();
