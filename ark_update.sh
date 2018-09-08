@@ -20,6 +20,8 @@ STEAMDIR="$(getFromCfg STEAMDIR)"
 STEAMMODDIR="$STEAMDIR/steamapps/common/ARK/steamapps/workshop/content/346110"
 #You're not forced to place your server startup script there. Just give enter the full path of the script
 STARTUPSCRIPT="$(getFromCfg STARTUP_SCRIPT)"
+#The command to kill all ark instances for this user
+KILL_COMMAND="$(getFromCfg KILL_COMMAND)"
 #The ARK root directory
 GAMEDIR="$(getFromCfg ARKDIR)"
 #The full path to the GameUserSettings.ini
@@ -312,7 +314,7 @@ if (("$dorestart" > 0)); then
         	echo "Kill server now. pls wait..."
 	fi
 
-        killall -w -v "ShooterGameServer" | tee /dev/tty
+        $KILL_COMMAND | tee /dev/tty
         wait
         echo "Startup server again"
         $STARTUPSCRIPT &
