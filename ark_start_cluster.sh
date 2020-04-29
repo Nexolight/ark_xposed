@@ -41,3 +41,18 @@ if ! pgrep -a -u $USER ShooterGameSer | grep -Eo 'ShooterGameServer TheCenter' &
         $HOME/ark.the-center.sh &
 fi
 
+if ! pgrep -a -u $USER ShooterGameSer | grep -Eo 'ShooterGameServer Valguero' &> /dev/null;then
+       echo "$(date) - Starting Valguero"
+        $HOME/ark.valguero.sh &
+fi
+
+if ! pgrep -a -u $USER ShooterGameSer | grep -Eo 'ShooterGameServer Extinction' &> /dev/null;then
+       echo "$(date) - Starting Extinction"
+        $HOME/ark.extinction.sh &
+fi
+
+if ! pgrep -a -u $USER ShooterGameSer | grep -Eo 'ShooterGameServer Genesis' &> /dev/null;then
+       echo "$(date) - Starting Genesis"
+        $HOME/ark.genesis.sh &
+fi
+
