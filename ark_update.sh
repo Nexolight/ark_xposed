@@ -26,7 +26,7 @@ KILL_COMMAND="$(getFromCfg KILL_COMMAND)"
 GAMEDIR="$(getFromCfg ARKDIR)"
 #The full path to the GameUserSettings.ini
 BASECONFIG=$GAMEDIR/ShooterGame/Saved/Config/LinuxServer/GameUserSettings.ini
-MMHINT="\n\nIf you get a version missmatch after the restart then delete your local (outdated) mod version to force steam to redownload it. See toxicdragonz.pro --> faq (right side)\nhttp://toxicdragonz.pro/index.php/faq/"
+MMHINT="\n\nIf you get a version missmatch after the restart then delete your local (outdated) mod version to force steam to redownload it. tortuga.coldbyte.net --> faq (right side)\n"
 #Steam user
 #No explination needed
 STEAMUSER="anonymous"
