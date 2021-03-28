@@ -4,6 +4,7 @@ from xposed.xposed_utils import Utils
 from flask_session import Session
 from flask_openid import OpenID
 from flask_cors import CORS, cross_origin
+from waitress import serve
 xposed = Flask(__name__)
 cors = CORS(xposed,resources={r"/*": {"origins": cfgh.readCfg("XPOSED_CORS_ORIGINS")}})
 xposed.config.update({
@@ -29,7 +30,8 @@ class XPosed(object):
         xposed.register_blueprint(xposed_conf_bp)
         xposed.register_blueprint(xposed_profile_bp)
         xposed.register_blueprint(xposed_chat_bp)
-        xposed.run(port=int(cfgh.readCfg("XPOSED_PORT")), host=cfgh.readCfg("XPOSED_BIND"), threaded=True)
+        #xposed.run(port=int(cfgh.readCfg("XPOSED_PORT")), host=cfgh.readCfg("XPOSED_BIND"), threaded=True)
+        serve(xposed, port=int(cfgh.readCfg("XPOSED_PORT")), host=cfgh.readCfg("XPOSED_BIND"), threads=4)
 
 @xposed.route("/", methods=['GET', 'POST'])
 def hello_world():
