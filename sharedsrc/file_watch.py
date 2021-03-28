@@ -85,7 +85,7 @@ class FWWorker(threading.Thread):
                     obj["lastcheck"]=time.time();
                     self.checkFile(key)
             for aT in self.activeTasks:
-                if not aT.isAlive():
+                if not aT.is_alive():
                     self.activeTasks.remove(aT)
             if len(self.queue) > 0 and len(self.activeTasks) < multiprocessing.cpu_count():
                 job = self.queue.pop(0)
